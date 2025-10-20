@@ -1,0 +1,19 @@
+{
+  "name": "generate",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "generate-token.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "offusca": "javascript-obfuscator ./public/script.js --output ./public/script.offuscato.js",
+    "watch-offusca": "nodemon --watch ./public/script.js --exec \"npm run offusca\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.2"
+  }
+
+}

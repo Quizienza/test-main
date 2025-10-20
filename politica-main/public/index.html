@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <title>Quizienza</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" sizes="any" href="immagini/150g.svg">
+    <link rel="icon" type="image/png" sizes="512x512" href="immagini/okun515.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="512x512" href="immagini/okun515.png">
+    <link rel="manifest" href="\site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="16x16" href="immagini/favicon.png">
+   <!-- CSS per l'organizzazione dei file (nel caso togli i link sopra)-->
+
+</head>
+
+<body>
+
+    <!-- Authentication Screen -->
+    <div id="auth-screen">
+        <div class="app-logo">
+            <img src="immagini/70g.png" alt="Logo Quizienza" class="logo-image">
+            <h1>Quizienza</h1>
+            <p class="app-description">Metti alla prova le tue conoscenze universitarie</p>
+        </div>
+
+        <div id="auth-forms">
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form">
+                <h2>Accedi</h2>
+                <div class="form-group">
+                    <label for="username">Nome utente:</label>
+                    <input type="text" id="username" placeholder="Inserisci il tuo username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Inserisci la tua password" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="remember-me">
+                    <label for="remember-me">Ricordami</label>
+                </div>
+                <button id="login-btn" class="auth-btn">
+                    <i class="fas fa-sign-in-alt"></i> Accedi
+                </button>
+                <p class="auth-switch">Non hai un account? <a href="#" id="show-register">Registrati</a></p>
+            </div>
+
+            <!-- Registration Form -->
+            <div id="register-form" class="auth-form" style="display: none;">
+                <h2>Registrati</h2>
+                <div class="form-group">
+                    <label for="reg-username">Nome utente:</label>
+                    <input type="text" id="reg-username" placeholder="Scegli un username" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password:</label>
+                    <input type="password" id="reg-password" placeholder="Crea una password" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-confirm-password">Conferma Password:</label>
+                    <input type="password" id="reg-confirm-password" placeholder="Conferma la password" required>
+                </div>
+                <button id="register-btn" class="auth-btn">
+                    <i class="fas fa-user-plus"></i> Registrati
+                </button>
+                <p class="auth-switch">Hai già un account? <a href="#" id="show-login">Accedi</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Dashboard -->
+    <div id="user-dashboard">
+        <!-- Menu a Tendina -->
+        <div class="sidebar-menu" id="sidebarMenu">
+            <div class="menu-overlay" id="menuOverlay"></div>
+            <div class="menu-content">
+                <div class="menu-header">
+                    <img src="immagini/64gufo.png" alt="Quizienza" class="menu-logo">
+                    <h3>Quizienza</h3>
+                    <button class="menu-close" id="menuClose">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <nav class="menu-nav">
+
+                    <a href="chi-siamo.html" class="menu-item">
+                        <i class="fas fa-users"></i>
+                        <span>Chi Siamo</span>
+                    </a>
+                    <div class="menu-divider"></div>
+                    <h4 class="menu-subtitle">Supporto</h4>
+
+                    <a href="#" class="menu-item" onclick="openMaterialSubmission()">
+                        <i class="fas fa-file-upload"></i>
+                        <span>Invia Materiale</span>
+                    </a>
+                    <a href="https://forms.gle/DBzEPfLzybHWFffL6" target="_blank" class="menu-item">
+                        <i class="fas fa-flag"></i>
+                        <span>Segnala un Problema</span>
+                    </a>
+                    
+
+                    <div class="menu-divider"></div>
+                    
+
+                    <h4 class="menu-subtitle">Tema</h4>
+
+                    <div class="menu-item darkmode-toggle-item">
+                        <button id="darkModeToggle" class="dark-mode-toggle">
+                            <i class="fas fa-moon"></i>
+                            <span>Modalità scura</span>
+                        </button>
+                    </div>
+
+                    <div class="menu-divider"></div>
+
+                    <h4 class="menu-subtitle">I Nostri Social</h4>
+
+                    <a href="https://www.instagram.com/quizienzaofficial?igsh=MXZ5czd4N3oxeXZleQ%3D%3D&utm_source=qr"
+                        target="_blank" class="menu-item">
+                        <i class="fab fa-instagram"></i>
+                        <span>Instagram</span>
+                    </a>
+                </nav>
+
+                <div class="menu-footer">
+                    <p>&copy; 2025 Quizienza. Tutti i diritti riservati.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottone Menu Hamburger -->
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="dashboard-header">
+            <div class="user-greeting">
+                <h2>Benvenuto, <span id="welcome-username"> </span> <img src="immagini/64g.png" alt="Media punteggio"
+                        class="stat-image"></h2>
+
+                <button id="logout-btn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Esci
+                </button>
+            </div>
+
+            <!-- Sezione selezione canale -->
+            <section class="channel-section">
+                <h3><i class="fas fa-layer-group"></i> Seleziona il tuo canale</h3>
+                <div class="channel-cards">
+                    <div class="channel-card" data-channel="A-D">
+                        <div class="channel-icon">
+                            <span>A-D</span>
+                        </div>
+                        <h4>Canale A-D</h4>
+                    </div>
+
+                    <div class="channel-card" data-channel="E-M">
+                        <div class="channel-icon">
+                            <span>E-M</span>
+                        </div>
+                        <h4>Canale E-M</h4>
+                    </div>
+
+                    <div class="channel-card" data-channel="N-Z">
+                        <div class="channel-icon">
+                            <span>N-Z</span>
+                        </div>
+                        <h4>Canale N-Z</h4>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sezione selezione materia (visibile dopo aver selezionato il canale) -->
+            <section class="subject-section" id="subject-section" style="display: none;">
+                <div class="subject-section-header">
+                    <button id="back-to-channels-from-subjects" class="back-arrow-btn-small" title="Torna ai canali">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="header-content">
+                        <p class="channel-description">Seleziona una materia per iniziare a studiare</p>
+                    </div>
+                </div>
+
+                <!-- Materie Scritte -->
+                <div class="subject-category">
+                    <h4 class="category-title" data-channel-title="true">
+                        <i class="fas fa-book-open"></i> Materie Scritte (Quiz a Crocette)
+                    </h4>
+                    <div class="subject-cards">
+                        <div class="subject-card" data-subject="politica">
+                            <div class="subject-icon">
+                                <i class="fas fa-landmark"></i>
+                            </div>
+                            <h4>Politica Economica</h4>
+                            <p>Macroeconomia, microeconomia e politica fiscale</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+
+                        <div class="subject-card" data-subject="eoi">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-industry"></i>
+                            </div>
+                            <h4>Economia e Org. Industriale</h4>
+                            <p>Strutture di mercato e strategie aziendali</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+
+                        <div class="subject-card" data-subject="empi">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <h4>Energie, Materie Prime e Innovazione</h4>
+                            <p>Tecnologie energetiche e gestione risorse</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+
+                        <div class="subject-card" data-subject="organizzazione">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <h4>Organizzazione Aziendale</h4>
+                            <p>Strutture organizzative e processi aziendali</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+
+                        <div class="subject-card" data-subject="ecopol">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-money-bill"></i>
+                            </div>
+                            <h4>Economia Politica</h4>
+                            <p>Microeconomia e Macroeconomia</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+
+                        <div class="subject-card" data-subject="ecomonetaria">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <h4>Economia e Politica Monetaria</h4>
+                            <p>Studio della moneta e delle politiche delle banche centrali su economia e inflazione.</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+
+                        <div class="subject-card" data-subject="privatoad">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <h4>Diritto Privato</h4>
+                            <p>Obbligazioni, contratti e successioni</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Materie Orali -->
+                <div class="subject-category">
+                    <h4 class="category-title-secondary">
+                        <i class="fas fa-microphone"></i> Materie Orali
+                    </h4>
+                    <div class="subject-cards">
+                        <div class="subject-card oral-subject" data-subject="dirittoprivato" data-type="flashcards">
+                            <div class="subject-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <h4>Diritto Privato</h4>
+                            <p>Flashcard per preparazione esame orale</p>
+                            <div class="channel-badge">Canale</div>
+                        </div>
+                    </div>
+            </section>
+
+
+            <!-- Sezione dashboard materia (visibile dopo aver selezionato materia) -->
+            <section class="subject-dashboard" id="subject-dashboard" style="display: none;">
+
+                <!-- Messaggio di errore -->
+                <div id="no-quiz-message" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>Quiz non ancora disponibile</h3>
+                    <p id="no-quiz-subject-name"></p>
+                    <p class="no-quiz-info">Stiamo lavorando per aggiungere nuovi contenuti.</p>
+                </div>
+                <div class="dashboard-header">
+                    <div class="subject-info">
+                        <button id="back-to-channels" class="back-arrow-btn-small" title="Torna ai canali">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h3 id="current-subject-name"></h3>
+                        <span class="subject-badge" id="current-subject-badge"></span>
+                    </div>
+
+                    <div class="user-stats-container">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="completed-quizzes">0</span>
+                                <span class="stat-label">Quiz completati</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="average-score">0%</span>
+                                <span class="stat-label">Media punteggio</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="best-score">0%</span>
+                                <span class="stat-label">Miglior punteggio</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="quiz-settings">
+                <h3>
+                    <i class="fas fa-cog"></i> Impostazioni Quiz
+                    <a href="https://forms.gle/DBzEPfLzybHWFffL6" target="_blank" class="segnala-problema"
+                        title="Clicca qui per segnalare un problema">
+                        <img src="immagini/bandiera.png" alt="Segnala problema">
+                    </a>
+                </h3>
+
+                <div class="settings-form">
+                    <!-- Selettore modalità -->
+                    <div class="mode-switch" role="tablist" aria-label="Seleziona modalità quiz">
+                        <button type="button" class="mode-btn active" data-mode="fixed" aria-selected="true">Sessione a numero di domande</button>
+                        <button type="button" class="mode-btn" data-mode="progressive" aria-selected="false">Sessione progressiva</button>
+                    </div>
+
+                    <div id="fixed-section" class="mode-section">
+                        <div class="form-group">
+                        <label for="question-count">Numero di domande:
+                            <div class="tooltip-container" id="frequent-errors-tooltip">
+                                <span class="tooltip-icon">?</span>
+                                <div class="tooltip-text">
+                                    <strong>Consiglio:</strong> Noi sviluppatori consigliamo, per i nuovi utenti, di
+                                    partire con poche domande (circa 10/15) e di utilizzare sempre i tasti Ripeti errori
+                                    e Ripeti Errori Frequenti, così da memorizzare più velocemente le risposte. Dopo
+                                    alcuni giorni (3/4) consigliamo inoltre di aumentare il numero di domande a 20/30.
+                                    In breve, un aumento costante e progressivo.
+                                </div>
+                            </div>
+                        </label>
+                        <select id="question-count" class="form-select">
+                            <option value="1">1 domanda (senza tempo)</option>
+                            <option value="5">5 domande (senza tempo)</option>
+                            <option value="10">10 domande (senza tempo)</option>
+                            <option value="15">15 domande (30 minuti)</option>
+                            <option value="20">20 domande (40 minuti)</option>
+                            <option value="30">30 domande (45 minuti)</option>
+                            <option value="50">50 domande (senza tempo)</option>
+                            <option value="60">60 domande (senza tempo)</option>
+                            <option value="90">90 domande (senza tempo)</option>
+                            <option value="120">120 domande (senza tempo)</option>
+                            <option value="150">150 domande (senza tempo)</option>
+                            <option value="200">200 domande (senza tempo)</option>
+                            <option value="0">Tutte le domande (senza tempo)</option>
+                        </select>
+                        </div>
+                        <button id="start-quiz-btn" class="primary-btn" style="width:100%;">
+                            <i class="fas fa-play"></i> Avvia Quiz
+                        </button>
+                    </div>
+                    
+                    <!-- Progressive Challenge -->
+                    <div id="pc-section" class="pc-section" style="display:none;margin-top:14px;">
+                        <div class="pc-header" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <i class="fas fa-chart-line" style="color: var(--primary-color);"></i>
+                            <strong>Sessione progressiva</strong>
+                            <div class="tooltip-container" id="pc-mode-tooltip">
+                                <span class="tooltip-icon">?</span>
+                                <div class="tooltip-text">
+                                    <strong>Come funziona:</strong> scegli la grandezza del blocco (5, 15, 30, 50) oppure imposta un valore <em>Personalizzato</em>.
+                                    Al termine del blocco le domande rimanenti per la materia si riducono e puoi decidere se continuare con un altro blocco o tornare alla dashboard.
+                                    Le azioni <em>Ripeti stesso quiz</em> e <em>Riprova le domande sbagliate</em> non riducono le rimanenti. Il campo Personalizzato accetta un numero tra 1 e le domande rimanenti.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pc-controls" style="display:flex;flex-direction:column;gap:10px;align-items:stretch;">
+                            <div class="pc-chips" style="display:flex;flex-wrap:wrap;gap:8px;">
+                                <button class="pc-box-btn" data-pc-size="5" type="button">5</button>
+                                <button class="pc-box-btn" data-pc-size="15" type="button">15</button>
+                                <button class="pc-box-btn" data-pc-size="30" type="button">30</button>
+                                <button class="pc-box-btn" data-pc-size="50" type="button">50</button>
+                            </div>
+                            <div class="pc-custom" style="display:flex;align-items:center;gap:8px;">
+                                <label for="pc-custom-input" style="font-size:.95rem;color:var(--text-light);">Personalizzato</label>
+                                <input id="pc-custom-input" type="number" min="1" step="1" value="5" style="width:120px;padding:10px;border:1px solid var(--medium-gray);border-radius:8px;"/>
+                            </div>
+                            <button id="pc-start-btn" class="primary-btn" type="button" style="width:100%;">
+                                <i class="fas fa-play"></i> Avvia Percorso
+                            </button>
+                        </div>
+                        <div id="pc-remaining-indicator" class="pc-remaining-indicator" style="margin-top:10px;font-size:.9rem;color:var(--text-light);">
+                            Rimanenti: – / –
+                        </div>
+                        <div class="pc-actions" style="margin-top:8px;display:flex;gap:8px;">
+                            <button id="pc-reset-btn" type="button" class="action-btn secondary-btn" style="padding:10px 12px;">
+                                <i class="fas fa-arrows-rotate"></i> Ripristina Sessione
+                            </button>
+                        </div>
+                    </div>
+                    <button id="repeat-frequent-errors-btn" class="frequent-errors-btn">
+                        <i class="fas fa-redo"></i> Ripeti errori frequenti
+                        <div class="tooltip-container" id="frequent-errors-tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <div class="tooltip-text">
+                                <strong>Come funziona:</strong> Un errore diventa "frequente" dopo che lo commetti più
+                                di 2 volte. Questo pulsante ti permette di ripetere solo le domande che hai sbagliato
+                                più spesso, per concentrarti sui tuoi punti deboli.
+                            </div>
+                        </div>
+                    </button>
+
+
+                </div>
+            </div>
+        </div>
+
+        <div class="chi-siamo-container">
+            <a href="https://www.instagram.com/quizienzaofficial?igsh=MXZ5czd4N3oxeXZleQ%3D%3D&utm_source=qr"
+                target="_blank" class="instagram-link">
+                <i class="fa-brands fa-instagram instagram-icon"></i></a>
+            <a href="chi-siamo.html" class="chi-siamo-btn">Chi Siamo</a>
+        </div>
+
+        <!-- Footer visibile solo nella dashboard -->
+        <footer class="site-footer" style="margin-top: 30px; text-align: center; font-size: 0.9em; color: #666;">
+            <p>Questo sito utilizza cookie tecnici per mantenere la sessione e garantire il corretto funzionamento del
+                sistema di quiz. Nessun dato personale viene tracciato per fini pubblicitari. Continuando a navigare,
+                accetti l'uso dei cookie. Le informazioni e le risposte fornite su questo sito hanno esclusivamente
+                scopo di ripasso e supporto allo studio. Non costituiscono materiale ufficiale né sostituiscono lo
+                studio diretto sui testi e manuali di riferimento, che restano lo strumento principale e indispensabile
+                per una preparazione completa. Gli autori e i gestori declinano ogni responsabilità per eventuali
+                errori, omissioni o inesattezze, così come per qualsiasi danno diretto o indiretto derivante
+                dall'utilizzo dei contenuti. </p>
+            <p>© 2025 Quizienza. Tutti i contenuti di questo sito sono protetti da copyright. È vietata la riproduzione,
+                copia o distribuzione non autorizzata.</p>
+        </footer>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" style="display: none;">
+        <div class="quiz-header">
+            <div class="quiz-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div id="progress-text">Domanda 1 di 15</div>
+            </div>
+            <div class="quiz-counter">
+                <span id="correct-counter">0/0</span>
+            </div>
+            <div class="quiz-timer">
+                <i class="fas fa-clock"></i>
+                <span id="time-remaining">30:00</span>
+            </div>
+            <div class="quiz-score">
+                <i class="fas fa-star"></i>
+                <span id="current-score">0% (0/0)</span>
+            </div>
+        </div>
+
+        <div id="answers-history" class="answers-history"></div>
+
+        <div class="quiz-content">
+            <div id="question-text"></div>
+            <div id="image-container"></div>
+            <div id="answer-buttons" class="answer-grid"></div>
+            <div id="explainDock"></div>
+        </div>
+
+        <div class="quiz-navigation">
+            <button id="back-to-dashboard-btn2" class="backarrowquiz-btn" title="Torna ai canali">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="next-btn" class="primary-btn2" disabled>
+                <i class="fas fa-arrow-right"></i> Avanti
+            </button>
+
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="results-screen" style="display: none;">
+        <div class="results-header">
+            <h2>Risultati del Quiz</h2>
+            <div class="score-display">
+                <span id="score-percentage">0%</span>
+                <span id="score-text">Da migliorare</span>
+            </div>
+        </div>
+
+        <div class="results-details">
+            <div class="result-stat">
+                <span class="stat-number" id="correct-answers">0</span>
+                <span class="stat-label">Risposte corrette</span>
+            </div>
+            <div class="result-stat">
+                <span class="stat-number" id="wrong-answers">0</span>
+                <span class="stat-label">Risposte errate</span>
+            </div>
+            <div class="result-stat">
+                <span class="stat-number" id="time-taken">00:00</span>
+                <span class="stat-label">Tempo impiegato</span>
+            </div>
+        </div>
+
+        <!-- Statistiche Sessione Progressiva (mostrate solo in progressiva) -->
+        <div id="pc-results-summary" class="pc-results-card" style="display:none;">
+            <div class="pc-results-header">
+                <div class="title-wrap">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sessione progressiva</span>
+                </div>
+                <div class="tooltip-container">
+                    <span class="tooltip-icon">?</span>
+                    <div class="tooltip-text">
+                        In modalità Sessione progressiva completi il quiz a blocchi. Le domande rimanenti si riducono solo quando completi un blocco. Qui vedi le statistiche del blocco e, se vuoi, il progresso totale.
+                    </div>
+                </div>
+            </div>
+            <div class="pc-stats-row">
+                <div class="pc-stat">
+                    <div class="pc-stat-label">Rimanenti</div>
+                    <div class="pc-stat-value"><span id="pc-remaining-now">0</span> / <span id="pc-total-questions">0</span></div>
+                </div>
+                <div class="pc-stat">
+                    <div class="pc-stat-label">Corrette totali</div>
+                    <div class="pc-stat-value pc-correct" id="pc-block-correct">0</div>
+                </div>
+                <div class="pc-stat">
+                    <div class="pc-stat-label">Errate totali</div>
+                    <div class="pc-stat-value pc-wrong" id="pc-block-wrong">0</div>
+                </div>
+            </div>
+            <div id="pc-total-stats" class="pc-stats-row" style="display:none;">
+                <div class="pc-stat">
+                    <div class="pc-stat-label">Completate totali</div>
+                    <div class="pc-stat-value" id="pc-total-completed">0</div>
+                </div>
+                <div class="pc-stat">
+                    <div class="pc-stat-label">Rimanenti totali</div>
+                    <div class="pc-stat-value" id="pc-total-remaining">0</div>
+                </div>
+                <div class="pc-stat">
+                    <div class="pc-stat-label">Progresso</div>
+                    <div class="pc-stat-value" id="pc-total-progress">0%</div>
+                </div>
+            </div>
+            <div class="pc-results-actions">
+                <button id="pc-toggle-total-btn" class="action-btn secondary-btn"><i class="fas fa-chart-pie"></i> Vedi progresso totale</button>
+            </div>
+        </div>
+
+        <!-- Aggiungi questa sezione per la visualizzazione dettagliata -->
+        <div id="detailed-results" class="detailed-results" style="display: none;">
+            <h3><i class="fas fa-list-check"></i> Dettaglio Risposte</h3>
+            <div id="results-list" class="results-list"></div>
+        </div>
+
+        <div class="results-actions">
+            <button id="repeat-same-quiz-btn" class="action-btn">
+                <i class="fas fa-sync"></i> Ripeti stesso quiz
+            </button>
+            <!-- Aggiungi questo nuovo pulsante -->
+            <button id="view-results-btn" class="action-btn secondary-btn">
+                <i class="fas fa-eye"></i> Vedi Risultati
+            </button>
+
+            <button id="retry-wrong-btn" class="action-btn">
+                <i class="fas fa-redo"></i> Riprova le domande sbagliate
+            </button>
+            <button id="new-quiz-btn" class="action-btn secondary-btn">
+                <i class="fas fa-plus"></i> Nuovo Quiz
+            </button>
+            <!-- Solo per Sessione progressiva -->
+            <button id="pc-continue-inline-btn" class="action-btn" style="display:none;">
+                <i class="fas fa-forward"></i> Continua blocco di sessione
+            </button>
+            <button id="back-to-dashboard-btn" class="action-btn secondary-btn">
+                <i class="fas fa-home"></i> Torna alla Dashboard
+            </button>
+        </div>
+    </div>
+
+    <!-- Flashcard Screen -->
+    <div id="flashcards-screen" style="display: none;">
+        <!-- Il contenuto verrà generato dinamicamente da JavaScript -->
+    </div>
+
+    <!-- RIMOSSO: <script src="domandepoleco.js"></script> -->
+    <!-- Javascript per i file organizzati-->
+    <script src="js/protect.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth-system.js"></script>
+    <script src="js/ai-system.js"></script>
+    <script src="js/quiz-system.js"></script>
+    <script src="js/flashcard-system.js"></script>
+    <script src="js/ui-manager.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>

@@ -1251,16 +1251,17 @@ function repeatSameQuiz() {
     function pcLoadStats(subject){
         try {
             const raw = localStorage.getItem(pcStatsKey(subject));
-            if (!raw) return { totalCorrect: 0, totalWrong: 0, blocksCompleted: 0, updatedAt: null };
+            if (!raw) return { totalCorrect: 0, totalWrong: 0, totalTimeSec: 0, blocksCompleted: 0, updatedAt: null };
             const obj = JSON.parse(raw);
             return {
                 totalCorrect: obj.totalCorrect || 0,
                 totalWrong: obj.totalWrong || 0,
+                totalTimeSec: obj.totalTimeSec || 0,
                 blocksCompleted: obj.blocksCompleted || 0,
                 updatedAt: obj.updatedAt || null
             };
         } catch {
-            return { totalCorrect: 0, totalWrong: 0, blocksCompleted: 0, updatedAt: null };
+            return { totalCorrect: 0, totalWrong: 0, totalTimeSec: 0, blocksCompleted: 0, updatedAt: null };
         }
     }
     function pcSaveStats(subject, stats){
@@ -1269,7 +1270,7 @@ function repeatSameQuiz() {
             localStorage.setItem(pcStatsKey(subject), JSON.stringify(stats));
         } catch {}
     }
-    function pcResetStats(subject){ pcSaveStats(subject, { totalCorrect: 0, totalWrong: 0, blocksCompleted: 0 }); }
+    function pcResetStats(subject){ pcSaveStats(subject, { totalCorrect: 0, totalWrong: 0, totalTimeSec: 0, blocksCompleted: 0 }); }
 
     function pcUpdateIndicator(state){
         const el = document.getElementById('pc-remaining-indicator');
@@ -1348,9 +1349,20 @@ function repeatSameQuiz() {
         if (resultsScreen) resultsScreen.style.display = 'none';
         if (quizScreen) quizScreen.style.display = 'block';
         if (document.querySelector('.quiz-timer')) {
-            document.querySelector('.quiz-timer').style.display = 'none';
+            document.querySelector('.quiz-timer').style.display = 'flex';
         }
+        startProgressiveTimer();
         showQuestion();
+    }
+
+    function startProgressiveTimer(){
+        clearInterval(quizTimerInterval);
+        if (timeRemaining) timeRemaining.textContent = '00:00';
+        const startAt = quizStartTime || Date.now();
+        quizTimerInterval = setInterval(() => {
+            const elapsed = Math.max(0, Math.floor((Date.now() - startAt) / 1000));
+            if (timeRemaining) timeRemaining.textContent = formatTime(elapsed);
+        }, 1000);
     }
 
     function startProgressiveChallenge(customSize){
@@ -1433,14 +1445,19 @@ function repeatSameQuiz() {
             const blkC = document.getElementById('pc-block-correct'); // ora cumulativo
             const blkW = document.getElementById('pc-block-wrong');   // ora cumulativo
             const totComp = document.getElementById('pc-total-completed');
-            const totRem = document.getElementById('pc-total-remaining');
+            const totTime = document.getElementById('pc-total-time');
             const totProg = document.getElementById('pc-total-progress');
             if (remEl) remEl.textContent = String(state.remainingIndexes.length);
             if (totEl) totEl.textContent = String(state.total);
             if (blkC) blkC.textContent = String(stats.totalCorrect || 0);
             if (blkW) blkW.textContent = String(stats.totalWrong || 0);
             if (totComp) totComp.textContent = String(state.total - state.remainingIndexes.length);
-            if (totRem) totRem.textContent = String(state.remainingIndexes.length);
+            if (totTime) {
+                const fmt = typeof formatTime === 'function' ? formatTime : (s => {
+                    const m = Math.floor(s/60), sec = s%60; return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+                });
+                totTime.textContent = fmt(stats.totalTimeSec || 0);
+            }
             if (totProg) {
                 const pct = Math.round(((state.total - state.remainingIndexes.length) / (state.total || 1)) * 100);
                 totProg.textContent = pct + '%';
@@ -1597,6 +1614,11 @@ function repeatSameQuiz() {
                 s.totalCorrect = (s.totalCorrect || 0) + (score || 0);
                 s.totalWrong = (s.totalWrong || 0) + Math.max(0, (totalQuestions || 0) - (score || 0));
                 s.blocksCompleted = (s.blocksCompleted || 0) + 1;
+                // somma il tempo del blocco
+                try {
+                    const elapsed = Math.max(0, Math.floor((Date.now() - (quizStartTime||Date.now()))/1000));
+                    s.totalTimeSec = (s.totalTimeSec || 0) + elapsed;
+                } catch {}
                 pcSaveStats(currentSubject, s);
             }
             pcRenderResultsSummary();

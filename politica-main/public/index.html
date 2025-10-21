@@ -8,7 +8,6 @@
     <title>Quizienza</title>
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" type="image/svg+xml" sizes="any" href="immagini/150g.svg">
     <link rel="icon" type="image/png" sizes="512x512" href="immagini/okun515.png">
     <link rel="apple-touch-icon" type="image/png" sizes="512x512" href="immagini/okun515.png">
@@ -185,9 +184,6 @@
             <!-- Sezione selezione materia (visibile dopo aver selezionato il canale) -->
             <section class="subject-section" id="subject-section" style="display: none;">
                 <div class="subject-section-header">
-                    <button id="back-to-channels-from-subjects" class="back-arrow-btn-small" title="Torna ai canali">
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
                     <div class="header-content">
                         <p class="channel-description">Seleziona una materia per iniziare a studiare</p>
                     </div>
@@ -196,12 +192,12 @@
                 <!-- Materie Scritte -->
                 <div class="subject-category">
                     <h4 class="category-title" data-channel-title="true">
-                        <i class="fas fa-book-open"></i> Materie Scritte (Quiz a Crocette)
+                        <i class="fa-solid fa-pen-to-square"></i> Materie Scritte (Quiz a Crocette)
                     </h4>
                     <div class="subject-cards">
                         <div class="subject-card" data-subject="politica">
                             <div class="subject-icon">
-                                <i class="fas fa-landmark"></i>
+                                <i class="fa-solid fa-landmark"></i>
                             </div>
                             <h4>Politica Economica</h4>
                             <p>Macroeconomia, microeconomia e politica fiscale</p>
@@ -210,7 +206,7 @@
 
                         <div class="subject-card" data-subject="eoi">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-industry"></i>
+                                <i class="fa-solid fa-industry"></i>
                             </div>
                             <h4>Economia e Org. Industriale</h4>
                             <p>Strutture di mercato e strategie aziendali</p>
@@ -219,7 +215,7 @@
 
                         <div class="subject-card" data-subject="empi">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-bolt"></i>
+                                <i class="fa-solid fa-bolt"></i>
                             </div>
                             <h4>Energie, Materie Prime e Innovazione</h4>
                             <p>Tecnologie energetiche e gestione risorse</p>
@@ -228,7 +224,7 @@
 
                         <div class="subject-card" data-subject="organizzazione">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-sitemap"></i>
+                                <i class="fa-solid fa-sitemap"></i>
                             </div>
                             <h4>Organizzazione Aziendale</h4>
                             <p>Strutture organizzative e processi aziendali</p>
@@ -237,7 +233,7 @@
 
                         <div class="subject-card" data-subject="ecopol">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-money-bill"></i>
+                                <i class="fa-solid fa-money-bill"></i>
                             </div>
                             <h4>Economia Politica</h4>
                             <p>Microeconomia e Macroeconomia</p>
@@ -246,7 +242,7 @@
 
                         <div class="subject-card" data-subject="ecomonetaria">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-coins"></i>
+                                <i class="fa-solid fa-coins"></i>
                             </div>
                             <h4>Economia e Politica Monetaria</h4>
                             <p>Studio della moneta e delle politiche delle banche centrali su economia e inflazione.</p>
@@ -255,7 +251,7 @@
 
                         <div class="subject-card" data-subject="privatoad">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-balance-scale"></i>
+                                <i class="fa-solid fa-scale-balanced"></i>
                             </div>
                             <h4>Diritto Privato</h4>
                             <p>Obbligazioni, contratti e successioni</p>
@@ -267,12 +263,12 @@
                 <!-- Materie Orali -->
                 <div class="subject-category">
                     <h4 class="category-title-secondary">
-                        <i class="fas fa-microphone"></i> Materie Orali
+                        <i class="fa-solid fa-microphone"></i> Materie Orali
                     </h4>
                     <div class="subject-cards">
                         <div class="subject-card oral-subject" data-subject="dirittoprivato" data-type="flashcards">
                             <div class="subject-icon" style="background: var(--primary-color);">
-                                <i class="fas fa-balance-scale"></i>
+                                <i class="fa-solid fa-scale-balanced"></i>
                             </div>
                             <h4>Diritto Privato</h4>
                             <p>Flashcard per preparazione esame orale</p>
@@ -412,17 +408,33 @@
                                 <label for="pc-custom-input" style="font-size:.95rem;color:var(--text-light);">Personalizzato</label>
                                 <input id="pc-custom-input" type="number" min="1" step="1" value="5" style="width:120px;padding:10px;border:1px solid var(--medium-gray);border-radius:8px;"/>
                             </div>
-                            <button id="pc-start-btn" class="primary-btn" type="button" style="width:100%;">
-                                <i class="fas fa-play"></i> Avvia Percorso
-                            </button>
-                        </div>
-                        <div id="pc-remaining-indicator" class="pc-remaining-indicator" style="margin-top:10px;font-size:.9rem;color:var(--text-light);">
-                            Rimanenti: – / –
-                        </div>
-                        <div class="pc-actions" style="margin-top:8px;display:flex;gap:8px;">
-                            <button id="pc-reset-btn" type="button" class="action-btn secondary-btn" style="padding:10px 12px;">
-                                <i class="fas fa-arrows-rotate"></i> Ripristina Sessione
-                            </button>
+                            <!-- Info rimanenti + reset -->
+                            <div class="pc-info-row" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                                <div id="pc-remaining-indicator" class="pc-remaining-indicator" style="font-size:.95rem;color:var(--text-light);">
+                                    Rimanenti: – / –
+                                </div>
+                                <button id="pc-reset-btn" type="button" class="action-btn secondary-btn" style="padding:10px 12px;">
+                                    <i class="fas fa-arrows-rotate"></i> Ripristina Sessione
+                                </button>
+                            </div>
+                            <!-- CTA: Avvia percorso -->
+                            <div class="pc-cta-row" style="display:flex;">
+                                <button id="pc-start-btn" class="primary-btn pc-cta" type="button" style="width:100%;">
+                                    <i class="fas fa-play"></i> Avvia Percorso
+                                </button>
+                            </div>
+                            <!-- Ripeti errori frequenti (Progressiva) -->
+                            <div class="pc-after-actions" style="margin-top:8px;">
+                                <button id="pc-repeat-frequent-errors-btn" class="frequent-errors-btn pc-cta" type="button" style="width:100%;">
+                                    <i class="fas fa-redo"></i> Ripeti errori frequenti
+                                    <div class="tooltip-container" id="pc-frequent-errors-tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <div class="tooltip-text">
+                                            <strong>Come funziona:</strong> Un errore diventa "frequente" quando lo sbagli più di 3 volte <em>nella sessione progressiva</em> di questa materia. Questo pulsante ti permette di ripetere solo le domande che hai sbagliato più spesso, per consolidare i punti deboli.
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <button id="repeat-frequent-errors-btn" class="frequent-errors-btn">

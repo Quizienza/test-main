@@ -143,7 +143,7 @@ function setupQuizEventListeners() {
     }
 
     if (retryWrongBtn) {
-        retryWrongBtn.addEventListener("click", retryWrongQuestions);
+        retryWrongBtn.addEventListener("click", () => { try { localStorage.setItem('returnToResults','true'); window.__pcBackToResults = true; } catch {} retryWrongQuestions(); });
     }
     if (pcRetryAllWrongBtn) {
         pcRetryAllWrongBtn.addEventListener('click', retryAllWrongSoFar);
@@ -165,7 +165,7 @@ function setupQuizEventListeners() {
         backToDashboardBtn.addEventListener("click", backToSubjectDashboard);
     }
     if (backToDashboardBtn2) {
-        backToDashboardBtn2.addEventListener("click", backToSubjectDashboard);
+        backToDashboardBtn2.addEventListener("click", handleBackFromQuiz);
     }
     if (backToDashboardTop) backToDashboardTop.addEventListener('click', backToSubjectDashboard);
     if (newQuizTopBtn) newQuizTopBtn.addEventListener('click', () => {
@@ -176,7 +176,7 @@ function setupQuizEventListeners() {
 
     // Ripeti stesso quiz (se presente nel DOM)
     if (repeatSameQuizBtn) {
-        repeatSameQuizBtn.addEventListener('click', repeatSameQuiz);
+        repeatSameQuizBtn.addEventListener('click', () => { try { localStorage.setItem('returnToResults','true'); window.__pcBackToResults = true; } catch {} repeatSameQuiz(); });
     }
 
     // Pulsante per tornare ai canali
@@ -711,34 +711,92 @@ function selectAnswer(e) {
     if (isCorrect) {
         selectedBtn.classList.add("correct");
         score++;
+        // Rimuovi dalla lista errori frequenti GLOBALI (modalità fissa)
         if (frequentErrorsBySubject[currentSubject]) {
             frequentErrorsBySubject[currentSubject] =
                 frequentErrorsBySubject[currentSubject].filter(q => q.question !== currentQuestion.question);
             localStorage.setItem("frequentErrorsBySubject", JSON.stringify(frequentErrorsBySubject));
         }
+        // Se siamo in contesto progressivo (sessione progressiva o ripasso errori frequenti progressivi),
+        // rimuovi anche dalla lista progressiva pcFrequentErrorsBySubject
+        try {
+            const lt = localStorage.getItem('lastQuizType') || '';
+            const pcCtx = localStorage.getItem('pc_session_context') || '';
+            const subjCtx = (currentSubject || localStorage.getItem('lastQuizSubject') || '');
+            const inProgressiveContext = (lt === 'progressive' || lt === 'frequentErrors') && pcCtx && pcCtx === subjCtx;
+            if (inProgressiveContext) {
+                const keyList = 'pcFrequentErrorsBySubject';
+                const data = JSON.parse(localStorage.getItem(keyList) || '{}');
+                const arr = Array.isArray(data[subjCtx]) ? data[subjCtx] : [];
+                if (arr.length) {
+                    // supporta sia array di oggetti domanda che array di stringhe (testi)
+                    const filtered = (typeof arr[0] === 'object')
+                        ? arr.filter(d => d && d.question !== currentQuestion.question)
+                        : arr.filter(t => String(t) !== currentQuestion.question);
+                    data[subjCtx] = filtered;
+                    localStorage.setItem(keyList, JSON.stringify(data));
+                    if (typeof window.pcUpdateProgressiveFrequentCounter === 'function') {
+                        try { window.pcUpdateProgressiveFrequentCounter(); } catch(_){}
+                    }
+                }
+            }
+        } catch {}
     } else {
         selectedBtn.classList.add("incorrect");
     }
     
     if (!isCorrect) {
-        if (!errorFrequencyBySubject[currentSubject]) {
-            errorFrequencyBySubject[currentSubject] = {};
-        }
-        if (!frequentErrorsBySubject[currentSubject]) {
-            frequentErrorsBySubject[currentSubject] = [];
+        // Determina se siamo nel contesto della sessione progressiva (inclusi retry/ricicli collegati)
+        let inProgressiveContext = false;
+        try {
+            const lt = localStorage.getItem('lastQuizType') || '';
+            const pcCtx = localStorage.getItem('pc_session_context') || '';
+            const subjCtx = (currentSubject || localStorage.getItem('lastQuizSubject') || '');
+            inProgressiveContext = (lt === 'progressive') || ((lt === 'retryWrong' || lt === 'frequentErrors') && pcCtx && pcCtx === subjCtx);
+        } catch {}
+
+        // Aggiorna SOLO i contatori GLOBALI se NON siamo in progressiva
+        if (!inProgressiveContext) {
+            if (!errorFrequencyBySubject[currentSubject]) {
+                errorFrequencyBySubject[currentSubject] = {};
+            }
+            if (!frequentErrorsBySubject[currentSubject]) {
+                frequentErrorsBySubject[currentSubject] = [];
+            }
+
+            errorFrequencyBySubject[currentSubject][currentQuestion.question] =
+                (errorFrequencyBySubject[currentSubject][currentQuestion.question] || 0) + 1;
+
+            if (errorFrequencyBySubject[currentSubject][currentQuestion.question] > 2 &&
+                !frequentErrorsBySubject[currentSubject].some(q => q.question === currentQuestion.question)) {
+                frequentErrorsBySubject[currentSubject].push(currentQuestion);
+            }
+
+            localStorage.setItem("errorFrequencyBySubject", JSON.stringify(errorFrequencyBySubject));
+            localStorage.setItem("frequentErrorsBySubject", JSON.stringify(frequentErrorsBySubject));
         }
 
-        errorFrequencyBySubject[currentSubject][currentQuestion.question] =
-            (errorFrequencyBySubject[currentSubject][currentQuestion.question] || 0) + 1;
+        // Contatori PROGRESSIVI (isolati dalla modalità fissa)
+        try {
+            if (inProgressiveContext) {
+                const keyFreq = 'pcErrorFrequencyBySubject';
+                const keyList = 'pcFrequentErrorsBySubject';
+                const pcEF = JSON.parse(localStorage.getItem(keyFreq) || '{}');
+                const pcFE = JSON.parse(localStorage.getItem(keyList) || '{}');
+                const subjKey = (currentSubject || localStorage.getItem('pc_last_subject') || localStorage.getItem('lastQuizSubject'));
+                if (!pcEF[subjKey]) pcEF[subjKey] = {};
+                if (!pcFE[subjKey]) pcFE[subjKey] = [];
+                pcEF[subjKey][currentQuestion.question] = (pcEF[subjKey][currentQuestion.question] || 0) + 1;
+                if (pcEF[subjKey][currentQuestion.question] > 2 && !pcFE[subjKey].some(q => q.question === currentQuestion.question)) {
+                    pcFE[subjKey].push(currentQuestion);
+                }
+                localStorage.setItem(keyFreq, JSON.stringify(pcEF));
+                localStorage.setItem(keyList, JSON.stringify(pcFE));
+                if (typeof window.pcUpdateProgressiveFrequentCounter === 'function') window.pcUpdateProgressiveFrequentCounter();
+            }
+        } catch {}
 
-        if (errorFrequencyBySubject[currentSubject][currentQuestion.question] > 2 &&
-            !frequentErrorsBySubject[currentSubject].some(q => q.question === currentQuestion.question)) {
-            frequentErrorsBySubject[currentSubject].push(currentQuestion);
-        }
-
-        localStorage.setItem("errorFrequencyBySubject", JSON.stringify(errorFrequencyBySubject));
-        localStorage.setItem("frequentErrorsBySubject", JSON.stringify(frequentErrorsBySubject));
-        
+        // Aggiorna il badge del bottone globale (utile in modalità fissa). In progressiva è nascosto.
         updateFrequentErrorsCounter();
     }
 
@@ -827,39 +885,11 @@ function showResults() {
     if (rsq) {
         rsq.style.display = inRepeatFrequentErrorsMode ? 'none' : '';
     }
-    // Mostra il pulsante "Continua blocco di sessione" SOLO per i risultati della Sessione progressiva
+    // Nascondi i duplicati inferiori (in progressiva le azioni sono nella card sotto "Vedi progresso totale")
     const pcInlineBtn = document.getElementById('pc-continue-inline-btn');
-    if (pcInlineBtn) {
-        const lastType = (localStorage.getItem('lastQuizType') || '');
-        const lastSubj = (localStorage.getItem('lastQuizSubject') || '');
-        const pcCtx = (localStorage.getItem('pc_session_context') || '');
-        const isProgressiveContext = (lastType === 'progressive') || (lastType === 'retryWrong' && pcCtx && pcCtx === lastSubj);
-        pcInlineBtn.style.display = isProgressiveContext ? '' : 'none';
-        if (isProgressiveContext) {
-            // bind handler once
-            pcInlineBtn.onclick = () => {
-                try { continueProgressChallenge(); } catch(e) { console.warn('[PC] continue inline error', e); }
-            };
-        }
-    }
-    // Mostra il pulsante "Riprova sbagliate finora" solo in progressiva
+    if (pcInlineBtn) pcInlineBtn.style.display = 'none';
     const pcRetryAll = document.getElementById('pc-retry-all-wrong-btn');
-    if (pcRetryAll) {
-        const lastType = (localStorage.getItem('lastQuizType') || '');
-        const lastSubj = (localStorage.getItem('lastQuizSubject') || '');
-        const pcCtx = (localStorage.getItem('pc_session_context') || '');
-        const isProgressiveContext = (lastType === 'progressive') || (lastType === 'retryWrong' && pcCtx && pcCtx === lastSubj);
-        // Mostra solo se ci sono sbagliate cumulative nel contesto
-        let hasWrong = false;
-        try {
-            const getter = (window.getProgressiveWrongTexts || function(){ return []; });
-            hasWrong = getter(currentSubject || lastSubj).length > 0;
-        } catch { hasWrong = false; }
-        pcRetryAll.style.display = (isProgressiveContext && hasWrong) ? '' : 'none';
-        if (isProgressiveContext && hasWrong) {
-            pcRetryAll.onclick = () => { try { retryAllWrongSoFar(); } catch(e) { console.warn('[PC] retry-all inline error', e);} };
-        }
-    }
+    if (pcRetryAll) pcRetryAll.style.display = 'none';
     // Nascondi pulsanti inferiori; gestisci top actions
     const newQuiz = document.getElementById('new-quiz-btn');
     if (newQuiz) {
@@ -964,6 +994,20 @@ function backToSubjectDashboard() {
     if (siteFooter) siteFooter.style.display = 'block';
 }
 
+// Ritorna ai risultati se il quiz è stato lanciato da quella schermata
+function handleBackFromQuiz(event) {
+    const flag = (localStorage.getItem('returnToResults') === 'true');
+    if (flag) {
+        if (event) { try { event.preventDefault(); event.stopPropagation(); } catch(_) {} }
+        if (quizScreen) quizScreen.style.display = 'none';
+        if (resultsScreen) resultsScreen.style.display = 'block';
+        try { localStorage.removeItem('returnToResults'); } catch {}
+        window.__pcBackToResults = false;
+        return;
+    }
+    backToSubjectDashboard();
+}
+
 function restoreDashboardView() {
     const dashboardHeader = document.querySelector('.subject-dashboard .dashboard-header');
     const dashboardContent = document.querySelector('.dashboard-content');
@@ -978,25 +1022,55 @@ function restoreDashboardView() {
     if (siteFooter) siteFooter.style.display = 'block';
 }
 
-// Funzioni per errori frequenti
+// Funzioni per errori frequenti (fisso e progressivo)
 function repeatFrequentErrors() {
-    inRepeatFrequentErrorsMode = true;
-    const subjectErrors = frequentErrorsBySubject[currentSubject] || {};
-    const errorCount = Object.keys(subjectErrors).length;
-    
-    if (errorCount === 0) {
-        alert("Non ci sono errori frequenti da ripetere per questa materia!");
-        return;
+  // Se l'UI è in modalità progressiva, delega alla versione PC
+  try {
+    const mode = (localStorage.getItem('quiz_mode') || 'fixed');
+    if (mode === 'progressive') {
+      pcRepeatFrequentErrors();
+      return;
     }
+  } catch {}
 
-    const subjectErrorsArray = frequentErrorsBySubject[currentSubject] || [];
+  // Modalità a numero di domande (fissa)
+  if (!currentSubject || !hasQuestions(currentSubject)) {
+    alert('Seleziona una materia valida!');
+    return;
+  }
 
-    if (subjectErrorsArray.length === 0) {
-        alert("Non ci sono errori frequenti da ripetere per questa materia!");
+  // Supporta formati legacy: array di domande o oggetto mappa
+  let list = [];
+  const subjectErrors = frequentErrorsBySubject[currentSubject];
+  if (Array.isArray(subjectErrors)) {
+    list = subjectErrors.slice();
+  } else if (subjectErrors && typeof subjectErrors === 'object') {
+    // Oggetto { "testo domanda": count } -> ricava domande esistenti
+    list = Object.keys(subjectErrors);
+  }
+
+  if (!list || list.length === 0) {
+    alert("Non ci sono errori frequenti da ripetere per questa materia!");
+    return;
+  }
+
+  // Se list è un array di stringhe, mappa sulle domande della materia
+  if (typeof list[0] === 'string') {
+    loadQuestionsForSubject(currentSubject, function(allQs){
+      const pool = (allQs || []).filter(q => list.includes(q.question));
+      if (!pool.length) {
+        alert('Nessuna domanda trovata per gli errori frequenti di questa materia.');
         return;
-    }
+      }
+      launchFrequentQuizFixed(pool);
+    });
+  } else {
+    // È già un array di domande
+    launchFrequentQuizFixed(list);
+  }
 
-    shuffledQuestions = [...subjectErrorsArray];
+  function launchFrequentQuizFixed(pool){
+    shuffledQuestions = pool.slice();
     totalQuestions = shuffledQuestions.length;
     currentQuestionIndex = 0;
     score = 0;
@@ -1008,13 +1082,76 @@ function repeatFrequentErrors() {
     if (userDashboard) userDashboard.style.display = "none";
     if (resultsScreen) resultsScreen.style.display = "none";
     if (quizScreen) quizScreen.style.display = "block";
-
-    if (document.querySelector('.quiz-timer')) {
-        document.querySelector('.quiz-timer').style.display = 'none';
-    }
+    const qt = document.querySelector('.quiz-timer');
+    if (qt) qt.style.display = 'none';
 
     try { localStorage.setItem("lastQuizType", "frequentErrors"); } catch {}
     showQuestion();
+  }
+}
+
+// Solo progressiva: usa la lista pcFrequentErrorsBySubject
+function pcRepeatFrequentErrors(){
+  try {
+    const data = JSON.parse(localStorage.getItem('pcFrequentErrorsBySubject') || '{}');
+    const subj = currentSubject || localStorage.getItem('pc_last_subject') || localStorage.getItem('lastQuizSubject');
+    if (!subj) { alert('Seleziona una materia valida!'); return; }
+
+    const raw = data[subj] || [];
+    if (!Array.isArray(raw) || raw.length === 0) { alert("Non ci sono errori frequenti da ripetere per questa materia!"); return; }
+
+    // raw può essere array di domande complete o di soli testi
+    if (raw.length && typeof raw[0] === 'object' && raw[0].question && Array.isArray(raw[0].answers)) {
+      launchFrequentQuizProgressive(subj, raw);
+      return;
+    }
+
+    // Converti testi in domande
+    loadQuestionsForSubject(subj, function(allQs){
+      const texts = raw.map(String);
+      const pool = (allQs || []).filter(q => texts.includes(q.question));
+      if (!pool.length) { alert('Nessuna domanda frequente trovata per questa materia.'); return; }
+      launchFrequentQuizProgressive(subj, pool);
+    });
+  } catch(e) {
+    console.warn('[PC] pcRepeatFrequentErrors error', e);
+    alert('Impossibile avviare Ripeti errori frequenti per questa materia.');
+  }
+}
+
+// Avvio del quiz in modalità progressiva usando un pool definito
+function launchFrequentQuizProgressive(subj, pool){
+  try {
+    // Contesto progressivo
+    retryMode = true;
+    inRepeatFrequentErrorsMode = true;
+    currentSubject = subj;
+    totalTimeAllowed = 0;
+    shuffledQuestions = pool.slice();
+    totalQuestions = shuffledQuestions.length;
+    currentQuestionIndex = 0;
+    score = 0;
+    wrongAnswers = [];
+    quizStartTime = Date.now();
+    timeLeft = 0;
+
+    if (userDashboard) userDashboard.style.display = "none";
+    if (resultsScreen) resultsScreen.style.display = "none";
+    if (quizScreen) quizScreen.style.display = "block";
+    const qt = document.querySelector('.quiz-timer');
+    if (qt) qt.style.display = 'none';
+
+    try {
+      localStorage.setItem("lastQuizType", "frequentErrors");
+      localStorage.setItem("lastQuizSubject", currentSubject);
+      localStorage.setItem("pc_session_context", String(currentSubject || ''));
+    } catch {}
+
+    showQuestion();
+  } catch(e) {
+    console.warn('[PC] launchFrequentQuizProgressive error', e);
+    alert('Impossibile avviare Ripeti errori frequenti per questa materia.');
+  }
 }
 
 function updateFrequentErrorsCounter() {
@@ -1614,9 +1751,18 @@ function repeatSameQuiz() {
             if (fixedSection) fixedSection.style.display = (mode === 'fixed') ? 'block' : 'none';
             if (pcSection) pcSection.style.display = (mode === 'progressive') ? 'block' : 'none';
             try { localStorage.setItem(MODE_KEY, mode); } catch {}
+            updateModeUIVisibility(mode);
+            // aggiorna subito il badge errori frequenti progressivi quando si passa alla progressiva
+            if (mode === 'progressive' && typeof window.pcUpdateProgressiveFrequentCounter === 'function') {
+                setTimeout(window.pcUpdateProgressiveFrequentCounter, 0);
+            }
         }
 
-        const savedMode = (localStorage.getItem(MODE_KEY) || 'fixed');
+        const getActiveMode = () => {
+            const activeBtn = document.querySelector('.mode-switch .mode-btn.active');
+            return activeBtn ? activeBtn.getAttribute('data-mode') : (localStorage.getItem(MODE_KEY) || 'fixed');
+        };
+        const savedMode = getActiveMode();
         applyMode(savedMode);
 
         modeButtons.forEach(btn => btn.addEventListener('click', () => {
@@ -1640,6 +1786,17 @@ function repeatSameQuiz() {
         const startBtn = document.getElementById('pc-start-btn');
         if (startBtn) startBtn.addEventListener('click', () => startProgressiveChallenge());
 
+        // Ripeti errori frequenti (solo progressiva)
+        const pcRepeatFreq = document.getElementById('pc-repeat-frequent-errors-btn');
+        if (pcRepeatFreq) pcRepeatFreq.addEventListener('click', pcRepeatFrequentErrors);
+        // Delegated listener for dynamic DOM
+        document.addEventListener('click', function(ev){
+            const t = ev.target && ev.target.closest && ev.target.closest('#pc-repeat-frequent-errors-btn');
+            if (!t) return;
+            ev.preventDefault();
+            pcRepeatFrequentErrors();
+        }, true);
+
         const customInput = document.getElementById('pc-custom-input');
         if (customInput) customInput.addEventListener('input', () => {
             const v = parseInt(customInput.value || '0') || 1;
@@ -1647,19 +1804,18 @@ function repeatSameQuiz() {
             if (v < 1) customInput.value = '1';
         });
 
-        const resetBtn = document.getElementById('pc-reset-btn');
-        if (resetBtn) resetBtn.addEventListener('click', () => {
-            if (!currentSubject) return;
-            pcEnsureQuestions(currentSubject, function(allQs){
-                const conf = confirm('Vuoi davvero azzerare i progressi per questa materia?');
-                if (!conf) return;
-                const ns = pcResetState(currentSubject, allQs.length);
-                pcUpdateIndicator(ns);
-                pcSetCustomInputBounds(ns);
-                pcResetStats(currentSubject);
-                pcClearSessionWrong(currentSubject);
-            });
-        });
+        // Gestione del tasto "Ripristina Sessione" (solo progressiva)
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('#pc-reset-btn');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof window.pcResetSessionProgressive === 'function') {
+                window.pcResetSessionProgressive();
+            } else {
+                pcResetSessionProgressive();
+            }
+        }, true);
 
         // Subject card hook to initialize per subject selection
         document.addEventListener('click', function(e){
@@ -1676,12 +1832,72 @@ function repeatSameQuiz() {
         const ensureCommitOnBack = (ev) => {
             const backBtn = ev?.target?.closest && ev.target.closest('#back-to-dashboard-btn, #back-to-dashboard-btn2');
             if (!backBtn) return;
+            // Se si richiede ritorno ai risultati, non committare e non interferire
+            try { if (localStorage.getItem('returnToResults') === 'true' || window.__pcBackToResults) return; } catch {}
             if (pc.active && pc.pendingCommit) {
                 pcCommitLastBlock();
             }
         };
         document.addEventListener('click', ensureCommitOnBack, true);
     }
+
+    function updateModeUIVisibility(mode){
+        try {
+            const m = mode || (localStorage.getItem('quiz_mode') || 'fixed');
+            const globalBtn = document.getElementById('repeat-frequent-errors-btn');
+            const pcBtn = document.getElementById('pc-repeat-frequent-errors-btn');
+            if (globalBtn) globalBtn.style.display = (m === 'progressive') ? 'none' : '';
+            if (pcBtn) pcBtn.style.display = (m === 'progressive') ? '' : 'none';
+        } catch {}
+    }
+
+    function pcResetSessionProgressive(){
+        // Recupera materia corrente o ultima usata in progressiva
+        let subj = currentSubject || localStorage.getItem('pc_last_subject') || localStorage.getItem('lastQuizSubject');
+        if (!subj) { alert('Seleziona una materia per ripristinare la sessione.'); return; }
+        pcEnsureQuestions(subj, function(allQs){
+            if (!allQs || !allQs.length) { alert('Nessuna domanda disponibile per questa materia.'); return; }
+            const conf = confirm('Vuoi davvero azzerare i progressi per questa materia?');
+            if (!conf) return;
+            const ns = pcResetState(subj, allQs.length);
+            if (subj === currentSubject) {
+                pcUpdateIndicator(ns);
+                pcSetCustomInputBounds(ns);
+            }
+            pcResetStats(subj);
+            pcClearSessionWrong(subj);
+            try {
+                const efKey = 'pcErrorFrequencyBySubject';
+                const feKey = 'pcFrequentErrorsBySubject';
+                const ef = JSON.parse(localStorage.getItem(efKey) || '{}');
+                const fe = JSON.parse(localStorage.getItem(feKey) || '{}');
+                if (ef && ef[subj]) delete ef[subj];
+                if (fe && fe[subj]) delete fe[subj];
+                localStorage.setItem(efKey, JSON.stringify(ef));
+                localStorage.setItem(feKey, JSON.stringify(fe));
+                localStorage.removeItem('pc_session_context');
+            } catch {}
+            // Cancella errori frequenti progressivi e aggiorna badge
+            try {
+                const keyFreq = 'pcErrorFrequencyBySubject';
+                const keyList = 'pcFrequentErrorsBySubject';
+                const pcEF = JSON.parse(localStorage.getItem(keyFreq) || '{}');
+                const pcFE = JSON.parse(localStorage.getItem(keyList) || '{}');
+                if (pcEF && pcEF[subj]) delete pcEF[subj];
+                if (pcFE && pcFE[subj]) delete pcFE[subj];
+                localStorage.setItem(keyFreq, JSON.stringify(pcEF));
+                localStorage.setItem(keyList, JSON.stringify(pcFE));
+            } catch {}
+            if (typeof window.pcUpdateProgressiveFrequentCounter === 'function') {
+                setTimeout(window.pcUpdateProgressiveFrequentCounter, 0);
+            }
+            try { pc.active = false; pc.pendingCommit = false; pc.currentBlockIndexes = []; } catch {}
+            try { if (typeof showNotification === 'function') showNotification('Sessione progressiva ripristinata', 'success'); } catch {}
+        });
+    }
+
+    // Espone la funzione di reset per uso globale
+    window.pcResetSessionProgressive = pcResetSessionProgressive;
 
     function pcInitializeForSubject(subj){
         if (!hasQuestions(subj)) return;
@@ -1692,6 +1908,9 @@ function repeatSameQuiz() {
             // pre-seleziona ultimo blocco se presente
             const last = state.lastBlock || 5;
             pcSelectBox(last);
+            // aggiorna badge errori frequenti progressivi
+            if (typeof window.pcUpdateProgressiveFrequentCounter === 'function') window.pcUpdateProgressiveFrequentCounter();
+            try { localStorage.setItem('pc_last_subject', subj); } catch {}
         });
     }
 
@@ -1721,27 +1940,21 @@ function repeatSameQuiz() {
             pcRenderResultsSummary();
             // Aggiorna pulsanti azione dei risultati (dopo aver aggiornato stats/sbagliate)
             try {
+                // Nascondi i duplicati inferiori: usiamo solo i pulsanti nella card
                 const pcInlineBtn = document.getElementById('pc-continue-inline-btn');
-                if (pcInlineBtn) {
-                    pcInlineBtn.style.display = '';
-                    pcInlineBtn.onclick = () => { try { continueProgressChallenge(); } catch(e){} };
-                }
+                if (pcInlineBtn) pcInlineBtn.style.display = 'none';
                 const pcInlineBtnCard = document.getElementById('pc-continue-inline-btn-card');
                 if (pcInlineBtnCard) {
                     pcInlineBtnCard.style.display = '';
-                    pcInlineBtnCard.onclick = () => { try { continueProgressChallenge(); } catch(e){} };
+                    pcInlineBtnCard.onclick = () => { try { localStorage.setItem('returnToResults','true'); window.__pcBackToResults = true; } catch {} try { continueProgressChallenge(); } catch(e){} };
                 }
                 const pcRetryAll = document.getElementById('pc-retry-all-wrong-btn');
-                if (pcRetryAll) {
-                    const wrongList = pcLoadSessionWrong(currentSubject || lastSubj) || [];
-                    pcRetryAll.style.display = wrongList.length > 0 ? '' : 'none';
-                    if (wrongList.length > 0) pcRetryAll.onclick = () => { try { retryAllWrongSoFar(); } catch(e){} };
-                }
+                if (pcRetryAll) pcRetryAll.style.display = 'none';
                 const pcRetryAllCard = document.getElementById('pc-retry-all-wrong-btn-card');
                 if (pcRetryAllCard) {
                     const wrongList = pcLoadSessionWrong(currentSubject || lastSubj) || [];
                     pcRetryAllCard.style.display = wrongList.length > 0 ? '' : 'none';
-                    if (wrongList.length > 0) pcRetryAllCard.onclick = () => { try { retryAllWrongSoFar(); } catch(e){} };
+                    if (wrongList.length > 0) pcRetryAllCard.onclick = () => { try { localStorage.setItem('returnToResults','true'); window.__pcBackToResults = true; } catch {} try { retryAllWrongSoFar(); } catch(e){} };
                 }
                 const newQuiz = document.getElementById('new-quiz-btn');
                 if (newQuiz) newQuiz.style.display = 'none';
@@ -1768,6 +1981,7 @@ function repeatSameQuiz() {
         pcInitUIEvents();
         // Se c'è già una materia corrente (rare), inizializza
         if (currentSubject) pcInitializeForSubject(currentSubject);
+        updateModeUIVisibility();
     });
 
     // Espone funzioni per debug opzionale
@@ -1786,7 +2000,98 @@ function repeatSameQuiz() {
             return state && typeof state === 'object' && Array.isArray(state.remainingIndexes) && state.total > 0;
         } catch { return false; }
     };
+    window.pcUpdateProgressiveFrequentCounter = function(){
+        try {
+            const keyList = 'pcFrequentErrorsBySubject';
+            const data = JSON.parse(localStorage.getItem(keyList) || '{}');
+            const subj = (currentSubject || localStorage.getItem('pc_last_subject') || localStorage.getItem('lastQuizSubject'));
+            const arr = data[subj] || [];
+            const btn = document.getElementById('pc-repeat-frequent-errors-btn');
+            if (!btn) return;
+            btn.dataset.subject = subj || '';
+            // add/remove small badge
+            let badge = btn.querySelector('.error-counter-badge');
+            const n = Array.isArray(arr) ? arr.length : 0;
+            if (n > 0) {
+                if (!badge) { badge = document.createElement('span'); badge.className = 'error-counter-badge'; btn.appendChild(badge); }
+                badge.textContent = n;
+                btn.classList.add('enabled');
+                btn.classList.remove('disabled');
+                btn.disabled = false;
+            } else {
+                if (badge) badge.remove();
+                btn.classList.remove('enabled');
+                btn.classList.add('disabled');
+                btn.disabled = true;
+            }
+        } catch {}
+    };
     // Espone elenco sbagliate della sessione progressiva corrente (testi delle domande)
     window.getProgressiveWrongTexts = window.getProgressiveWrongTexts || function(subject){ return pcLoadSessionWrong(subject); };
     window.__pcDebug = { pcLoadState, pcSaveState, pcResetState };
+})();
+
+
+/* === Progressive Reset: universal listeners (non-distruttivo) === */
+(function(){
+  // Click listener in capture phase
+  document.addEventListener('click', function(e){
+    const btn = e.target && e.target.closest && e.target.closest('#pc-reset-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window.pcResetSessionProgressive === 'function') {
+      try { window.pcResetSessionProgressive(); return; } catch(_) {}
+    }
+    try { __pcHardResetInline(); } catch(_) {}
+  }, true);
+
+  // Keyboard accessibility: Enter/Space trigger
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const btn = e.target && e.target.closest && e.target.closest('#pc-reset-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window.pcResetSessionProgressive === 'function') {
+      try { window.pcResetSessionProgressive(); return; } catch(_) {}
+    }
+    try { __pcHardResetInline(); } catch(_) {}
+  }, true);
+
+  // Inline fallback reset limited to SESSIONE PROGRESSIVA only
+  function __pcHardResetInline(){
+    const subj = (typeof currentSubject !== 'undefined' && currentSubject)
+                  || localStorage.getItem('pc_last_subject')
+                  || localStorage.getItem('lastQuizSubject');
+    if (!subj) { alert('Seleziona una materia per ripristinare la sessione.'); return; }
+    // wipe progressive state for this subject
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('pc_state_') && k.includes(subj)) localStorage.removeItem(k);
+        if (k.startsWith('pc_stats_') && k.includes(subj)) localStorage.removeItem(k);
+      });
+      localStorage.removeItem('pc_session_wrong_' + subj);
+      // progressive frequent errors
+      const efKey = 'pcErrorFrequencyBySubject';
+      const feKey = 'pcFrequentErrorsBySubject';
+      const ef = JSON.parse(localStorage.getItem(efKey) || '{}');
+      const fe = JSON.parse(localStorage.getItem(feKey) || '{}');
+      if (ef && ef[subj]) delete ef[subj];
+      if (fe && fe[subj]) delete fe[subj];
+      localStorage.setItem(efKey, JSON.stringify(ef));
+      localStorage.setItem(feKey, JSON.stringify(fe));
+      localStorage.removeItem('pc_session_context');
+    } catch {}
+
+    // UI refresh
+    const indicator = document.getElementById('pc-remaining-indicator');
+    if (indicator) indicator.textContent = 'Rimanenti: – / –';
+    const input = document.getElementById('pc-custom-input');
+    if (input) { input.min = '1'; input.max = '1'; input.value = '1'; }
+    if (typeof window.pcUpdateProgressiveFrequentCounter === 'function') {
+      try { setTimeout(window.pcUpdateProgressiveFrequentCounter, 0); } catch(_){}
+    }
+    alert('Sessione progressiva ripristinata');
+  }
 })();

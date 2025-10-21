@@ -1360,15 +1360,44 @@ body.dark-mode .why-btn {
 .pc-results-card .pc-stat-value.pc-wrong { color: #e74c3c; }
 .pc-results-card .pc-results-actions { display:flex; justify-content:center; }
 
+/* Results top actions */
+.results-header { position: relative; }
+.results-top-actions { position:absolute; top:8px; left:8px; right:8px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.pill-btn { border:none; border-radius:999px; padding:8px 14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,.12); transition:transform .15s ease, box-shadow .2s ease; }
+.pill-btn.primary { background: var(--primary-color); color:#fff; }
+.pill-btn.primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.pill-btn.ghost { background:#fff; color: var(--primary-color); border:2px solid var(--primary-color); }
+.pill-btn.ghost:hover { background: rgba(128,36,51,.06); transform: translateY(-1px); }
+.pill-btn i { font-size:1rem; }
+.pill-btn[data-tip] { position: relative; }
+.pill-btn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; left: 50%; bottom: 120%; transform: translateX(-50%);
+  background: rgba(0,0,0,.85); color:#fff; padding:6px 8px; border-radius:6px; font-size:.75rem; white-space:nowrap;
+  opacity:0; pointer-events:none; transition: opacity .2s ease, transform .2s ease; box-shadow:0 6px 16px rgba(0,0,0,.25);
+}
+.pill-btn[data-tip]::before {
+  content:""; position:absolute; left:50%; bottom:112%; transform: translateX(-50%);
+  border:6px solid transparent; border-top-color: rgba(0,0,0,.85); opacity:0; transition: opacity .2s ease;
+}
+.pill-btn[data-tip]:hover::after { opacity:1; transform: translateX(-50%) translateY(-2px); }
+.pill-btn[data-tip]:hover::before { opacity:1; }
+
+/* Inline actions inside PC card */
+.pc-results-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top: 6px; }
+.pc-results-actions .pill-btn .txt { display:inline; }
+
 /* Dark mode overlay */
 body.dark-mode .pc-modal { background: #1f1f1f; color: #fff; }
 body.dark-mode .pc-modal .pc-stat { background: rgba(255,255,255,.06); }
 body.dark-mode .pc-modal .pc-actions .secondary { background: transparent; color: #fff; border-color: rgba(255,255,255,.25); }
 
 /* Modalità: selettore */
-.mode-switch { display:flex; gap:8px; background: var(--light-gray); padding:6px; border-radius: 10px; align-items:center; width:fit-content; }
-.mode-switch .mode-btn { background: transparent; color: var(--text-color); border: 1px solid transparent; padding:8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-.mode-switch .mode-btn.active { background: var(--white); color: var(--primary-color); border-color: var(--primary-color); box-shadow: var(--box-shadow); }
+.mode-switch { display:flex; gap:6px; background: var(--white); padding:6px; border-radius: 14px; align-items:center; width:fit-content; border:1px solid var(--medium-gray); box-shadow: 0 6px 16px rgba(0,0,0,.06); }
+.mode-switch .mode-btn { background: transparent; color: var(--text-color); border: 1px solid transparent; padding:8px 14px; border-radius: 10px; cursor: pointer; font-weight: 700; transition: all .2s ease; }
+.mode-switch .mode-btn:hover { background: rgba(128,36,51,.06); }
+.mode-switch .mode-btn.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); box-shadow: 0 10px 20px rgba(128,36,51,.25); transform: translateY(-1px); }
+.mode-switch .mode-btn:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
 .mode-section { margin-top: 10px; }
 
 /* Rendi il bottone Avvia Quiz largo come il box impostazioni */
@@ -1388,6 +1417,10 @@ body.dark-mode .pc-modal .pc-actions .secondary { background: transparent; color
 .pc-chips .pc-box-btn.selected {
   box-shadow: 0 0 0 2px rgba(128,36,51,0.15), 0 6px 16px rgba(0,0,0,0.12);
 }
+
+/* CTA 3D per progressiva */
+.pc-cta { box-shadow: 0 10px 20px rgba(128,36,51,.25); border-radius: 12px; }
+.pc-cta:hover { transform: translateY(-1px); }
 
 /* Action: Continua blocco di sessione (solo progressiva) */
 #pc-continue-inline-btn {
@@ -2548,24 +2581,24 @@ h30 {
 /* ===================== */
 
 /* Categorie materie */
-.subject-category {
-    margin: 30px 0;
-}
+.subject-category { margin: 30px 0; background: var(--white); padding: 20px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); }
+.subject-category .subject-cards { margin-top: 10px; }
 
 .category-title,
 .category-title-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--secondary-color);
-    font-size: 1.05rem;
-    font-weight: 600;
-    letter-spacing: .6px;
-    text-transform: uppercase;
-    margin: 8px 0 18px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(128, 36, 51, 0.08);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing:.6px;
+  text-transform: none;
+  margin: 0 0 14px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
 }
 .category-title i,
 .category-title-secondary i {

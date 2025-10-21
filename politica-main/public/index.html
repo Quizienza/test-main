@@ -509,6 +509,14 @@
     <!-- Results Screen -->
     <div id="results-screen" style="display: none;">
         <div class="results-header">
+            <div class="results-top-actions">
+                <button id="back-to-dashboard-top" class="pill-btn ghost" aria-label="Torna alla dashboard" data-tip="Torna alla dashboard">
+                    <i class="fas fa-home"></i>
+                </button>
+                <button id="new-quiz-top-btn" class="pill-btn primary" aria-label="Nuovo Quiz" data-tip="Nuovo Quiz" style="display:none;">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
             <h2>Risultati del Quiz</h2>
             <div class="score-display">
                 <span id="score-percentage">0%</span>
@@ -574,7 +582,9 @@
                 </div>
             </div>
             <div class="pc-results-actions">
-                <button id="pc-toggle-total-btn" class="action-btn secondary-btn"><i class="fas fa-chart-pie"></i> Vedi progresso totale</button>
+                <button id="pc-toggle-total-btn" class="pill-btn ghost"><i class="fas fa-chart-pie"></i> <span class="txt">Vedi progresso totale</span></button>
+                <button id="pc-retry-all-wrong-btn-card" class="pill-btn ghost" style="display:none;"><i class="fas fa-rotate-left"></i> <span class="txt">Riprova sbagliate finora</span></button>
+                <button id="pc-continue-inline-btn-card" class="pill-btn primary" style="display:none;"><i class="fas fa-forward"></i> <span class="txt">Continua blocco</span></button>
             </div>
         </div>
 
@@ -596,14 +606,18 @@
             <button id="retry-wrong-btn" class="action-btn">
                 <i class="fas fa-redo"></i> Riprova le domande sbagliate
             </button>
-            <button id="new-quiz-btn" class="action-btn secondary-btn">
+            <!-- Solo per Sessione progressiva: ripeti tutte le sbagliate finora -->
+            <button id="pc-retry-all-wrong-btn" class="action-btn secondary-btn" style="display:none;">
+                <i class="fas fa-rotate-left"></i> Riprova sbagliate finora
+            </button>
+            <button id="new-quiz-btn" class="action-btn secondary-btn" style="display:none;">
                 <i class="fas fa-plus"></i> Nuovo Quiz
             </button>
             <!-- Solo per Sessione progressiva -->
             <button id="pc-continue-inline-btn" class="action-btn" style="display:none;">
                 <i class="fas fa-forward"></i> Continua blocco di sessione
             </button>
-            <button id="back-to-dashboard-btn" class="action-btn secondary-btn">
+            <button id="back-to-dashboard-btn" class="action-btn secondary-btn" style="display:none;">
                 <i class="fas fa-home"></i> Torna alla Dashboard
             </button>
         </div>

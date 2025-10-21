@@ -49,6 +49,9 @@ const newQuizBtn = document.getElementById('new-quiz-btn');
 const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
 const backToDashboardBtn2 = document.getElementById('back-to-dashboard-btn2');
 const repeatSameQuizBtn = document.getElementById('repeat-same-quiz-btn');
+const pcRetryAllWrongBtn = document.getElementById('pc-retry-all-wrong-btn');
+const backToDashboardTop = document.getElementById('back-to-dashboard-top');
+const newQuizTopBtn = document.getElementById('new-quiz-top-btn');
 
 // Quiz variables
 let retryMode = false;
@@ -142,6 +145,9 @@ function setupQuizEventListeners() {
     if (retryWrongBtn) {
         retryWrongBtn.addEventListener("click", retryWrongQuestions);
     }
+    if (pcRetryAllWrongBtn) {
+        pcRetryAllWrongBtn.addEventListener('click', retryAllWrongSoFar);
+    }
 
     if (newQuizBtn) {
         newQuizBtn.addEventListener("click", () => {
@@ -161,6 +167,12 @@ function setupQuizEventListeners() {
     if (backToDashboardBtn2) {
         backToDashboardBtn2.addEventListener("click", backToSubjectDashboard);
     }
+    if (backToDashboardTop) backToDashboardTop.addEventListener('click', backToSubjectDashboard);
+    if (newQuizTopBtn) newQuizTopBtn.addEventListener('click', () => {
+        // fallback: riusa l'handler di new-quiz-btn se presente
+        const b = document.getElementById('new-quiz-btn');
+        if (b) b.click(); else startQuiz();
+    });
 
     // Ripeti stesso quiz (se presente nel DOM)
     if (repeatSameQuizBtn) {
@@ -830,15 +842,34 @@ function showResults() {
             };
         }
     }
-    // Nascondi "Nuovo Quiz" SOLO quando il risultato corrente proviene da una sessione progressiva
-    const newQuiz = document.getElementById('new-quiz-btn');
-    if (newQuiz) {
+    // Mostra il pulsante "Riprova sbagliate finora" solo in progressiva
+    const pcRetryAll = document.getElementById('pc-retry-all-wrong-btn');
+    if (pcRetryAll) {
         const lastType = (localStorage.getItem('lastQuizType') || '');
         const lastSubj = (localStorage.getItem('lastQuizSubject') || '');
         const pcCtx = (localStorage.getItem('pc_session_context') || '');
         const isProgressiveContext = (lastType === 'progressive') || (lastType === 'retryWrong' && pcCtx && pcCtx === lastSubj);
-        newQuiz.style.display = isProgressiveContext ? 'none' : '';
+        // Mostra solo se ci sono sbagliate cumulative nel contesto
+        let hasWrong = false;
+        try {
+            const getter = (window.getProgressiveWrongTexts || function(){ return []; });
+            hasWrong = getter(currentSubject || lastSubj).length > 0;
+        } catch { hasWrong = false; }
+        pcRetryAll.style.display = (isProgressiveContext && hasWrong) ? '' : 'none';
+        if (isProgressiveContext && hasWrong) {
+            pcRetryAll.onclick = () => { try { retryAllWrongSoFar(); } catch(e) { console.warn('[PC] retry-all inline error', e);} };
+        }
     }
+    // Nascondi pulsanti inferiori; gestisci top actions
+    const newQuiz = document.getElementById('new-quiz-btn');
+    if (newQuiz) {
+        newQuiz.style.display = 'none';
+    }
+    const backBottom = document.getElementById('back-to-dashboard-btn');
+    if (backBottom) backBottom.style.display = 'none';
+    // Top actions
+    const lastType2 = (localStorage.getItem('lastQuizType') || '');
+    if (newQuizTopBtn) newQuizTopBtn.style.display = (lastType2 === 'progressive') ? 'none' : '';
 }
 
 function retryWrongQuestions() {
@@ -866,6 +897,52 @@ function retryWrongQuestions() {
     
     try { localStorage.setItem('lastQuizType', 'retryWrong'); } catch {}
     showQuestion();
+}
+
+// Sessione progressiva: ripeti tutte le sbagliate finora per la materia corrente
+function retryAllWrongSoFar() {
+    // Tutte le sbagliate FINORA nella sessione progressiva corrente per questa materia
+    try {
+        const subj = currentSubject || localStorage.getItem('lastQuizSubject');
+        if (!subj) { alert('Seleziona una materia valida.'); return; }
+        // Usa il getter pubblico esposto dal modulo PC per evitare ReferenceError di funzioni interne
+        const getter = (window.getProgressiveWrongTexts || function(){ return []; });
+        const wrongTexts = getter(subj) || [];
+        if (!Array.isArray(wrongTexts) || wrongTexts.length === 0) {
+            alert('Non ci sono domande sbagliate da ripetere finora per questa materia.');
+            return;
+        }
+        // Carica l'intero set della materia e filtra per i testi sbagliati
+        loadQuestionsForSubject(subj, function(allQs){
+            const pool = (allQs || []).filter(q => wrongTexts.includes(q.question));
+            if (!pool || pool.length === 0) {
+                alert('Nessuna domanda trovata da ripetere.');
+                return;
+            }
+            currentSubject = subj; // allinea il contesto
+            shuffledQuestions = shuffleArray(pool);
+            totalQuestions = shuffledQuestions.length;
+            currentQuestionIndex = 0;
+            score = 0;
+            wrongAnswers = [];
+            retryMode = true; // modalità ripasso
+            inRepeatFrequentErrorsMode = false;
+            quizStartTime = Date.now();
+            totalTimeAllowed = 0;
+            if (resultsScreen) resultsScreen.style.display = 'none';
+            if (quizScreen) quizScreen.style.display = 'block';
+            const qt = document.querySelector('.quiz-timer');
+            if (qt) qt.style.display = 'none';
+            try {
+                localStorage.setItem('lastQuizType', 'retryWrong');
+                localStorage.setItem('lastQuizSubject', currentSubject);
+            } catch {}
+            showQuestion();
+        });
+    } catch (e) {
+        console.warn('[PC] retryAllWrongSoFar error', e);
+        alert('Impossibile avviare il ripasso delle sbagliate finora.');
+    }
 }
 
 function backToSubjectDashboard() {
@@ -1272,6 +1349,23 @@ function repeatSameQuiz() {
     }
     function pcResetStats(subject){ pcSaveStats(subject, { totalCorrect: 0, totalWrong: 0, totalTimeSec: 0, blocksCompleted: 0 }); }
 
+    // === Elenco domande sbagliate nella SESSIONE progressiva corrente (per materia) ===
+    function pcSessionWrongKey(subject){ return `pc_session_wrong_${subject}`; }
+    function pcLoadSessionWrong(subject){
+        try { const raw = localStorage.getItem(pcSessionWrongKey(subject)); return raw ? JSON.parse(raw) : []; } catch { return []; }
+    }
+    function pcSaveSessionWrong(subject, list){
+        try { localStorage.setItem(pcSessionWrongKey(subject), JSON.stringify(Array.from(new Set(list)))); } catch {}
+    }
+    function pcAddSessionWrong(subject, wrongQuestions){
+        if (!subject) return;
+        const curr = new Set(pcLoadSessionWrong(subject));
+        (wrongQuestions || []).forEach(q => { if (q && q.question) curr.add(q.question); });
+        pcSaveSessionWrong(subject, Array.from(curr));
+    }
+    function pcClearSessionWrong(subject){ try { localStorage.removeItem(pcSessionWrongKey(subject)); } catch {}
+    }
+
     function pcUpdateIndicator(state){
         const el = document.getElementById('pc-remaining-indicator');
         if (!el) return;
@@ -1563,6 +1657,7 @@ function repeatSameQuiz() {
                 pcUpdateIndicator(ns);
                 pcSetCustomInputBounds(ns);
                 pcResetStats(currentSubject);
+                pcClearSessionWrong(currentSubject);
             });
         });
 
@@ -1620,8 +1715,38 @@ function repeatSameQuiz() {
                     s.totalTimeSec = (s.totalTimeSec || 0) + elapsed;
                 } catch {}
                 pcSaveStats(currentSubject, s);
+                // accumula sbagliate della SESSIONE progressiva
+                try { pcAddSessionWrong(currentSubject, originalWrongAnswers || wrongAnswers || []); } catch {}
             }
             pcRenderResultsSummary();
+            // Aggiorna pulsanti azione dei risultati (dopo aver aggiornato stats/sbagliate)
+            try {
+                const pcInlineBtn = document.getElementById('pc-continue-inline-btn');
+                if (pcInlineBtn) {
+                    pcInlineBtn.style.display = '';
+                    pcInlineBtn.onclick = () => { try { continueProgressChallenge(); } catch(e){} };
+                }
+                const pcInlineBtnCard = document.getElementById('pc-continue-inline-btn-card');
+                if (pcInlineBtnCard) {
+                    pcInlineBtnCard.style.display = '';
+                    pcInlineBtnCard.onclick = () => { try { continueProgressChallenge(); } catch(e){} };
+                }
+                const pcRetryAll = document.getElementById('pc-retry-all-wrong-btn');
+                if (pcRetryAll) {
+                    const wrongList = pcLoadSessionWrong(currentSubject || lastSubj) || [];
+                    pcRetryAll.style.display = wrongList.length > 0 ? '' : 'none';
+                    if (wrongList.length > 0) pcRetryAll.onclick = () => { try { retryAllWrongSoFar(); } catch(e){} };
+                }
+                const pcRetryAllCard = document.getElementById('pc-retry-all-wrong-btn-card');
+                if (pcRetryAllCard) {
+                    const wrongList = pcLoadSessionWrong(currentSubject || lastSubj) || [];
+                    pcRetryAllCard.style.display = wrongList.length > 0 ? '' : 'none';
+                    if (wrongList.length > 0) pcRetryAllCard.onclick = () => { try { retryAllWrongSoFar(); } catch(e){} };
+                }
+                const newQuiz = document.getElementById('new-quiz-btn');
+                if (newQuiz) newQuiz.style.display = 'none';
+                if (newQuizTopBtn) newQuizTopBtn.style.display = 'none';
+            } catch {}
             return;
         }
         // Non progressiva: nascondi pannello
@@ -1661,5 +1786,7 @@ function repeatSameQuiz() {
             return state && typeof state === 'object' && Array.isArray(state.remainingIndexes) && state.total > 0;
         } catch { return false; }
     };
+    // Espone elenco sbagliate della sessione progressiva corrente (testi delle domande)
+    window.getProgressiveWrongTexts = window.getProgressiveWrongTexts || function(subject){ return pcLoadSessionWrong(subject); };
     window.__pcDebug = { pcLoadState, pcSaveState, pcResetState };
 })();

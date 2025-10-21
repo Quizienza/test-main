@@ -15,16 +15,16 @@
   <!-- HEADER come in index -->
   <div class="dashboard-header2">
     <div class="user-greeting2">
-        
       <a href="index.html" class="logout-btn2">
         <i class="fas fa-arrow-left"></i> Torna alla Dashboard
-      </a>          <h30>Quizienza</h30>
+      </a>
+      <h30>Quizienza</h30>
       <img src="immagini/fedigufo72.png" alt="Logo Quizienza" class="logo-image2">
     </div>
   </div>
 
   <!-- CONTENUTO PAGINA -->
-  <main class="chi-siamo-content" style="box-shadow: var(--box-shadow); margin-bottom: 30px; background: var(--white); padding: 30px; border-radius: var(--border-radius); box-sizing:border-box;margin-left: 10px;margin-right: 10px;" >
+  <main class="chi-siamo-content">
     <h1>Chi Siamo</h1>
     <p>
       Siamo due studenti di "La Sapienza", della facoltà Scienze Aziendali (laurea triennale), con l'obiettivo di aiutare i nostri colleghi nel ripasso di materie universitarie. 
@@ -38,7 +38,7 @@
     <h2>Com'è nato Quizienza?</h2>
     <p>
       L'idea di base è nata da una nostra iniziale disperazione nel ripasso di Politica Economica, perchè non vi era nessuna maniera di attuare le nostre conoscenze riguardo la materia concretamente, in particolare non esisteva, fino ad oggi, nessun sito che potesse emulare simulazioni d'esame senza interfacce inutili e perditempo. Così un giorno uno dei due developer ha esordito dicendo "Quanto sarebbe bello avere un sito comodo per fare quiz in continuazione" e l'altro, il giorno stesso, mandò su whatsapp due messaggi: "Fra, eccomi. Ho una sorpresa per te:".</p>
-      <img src="immagini/quizienzastorica.jpg" width="100%" height="auto" style="max-width: 500px;">
+      <img src="immagini/quizienzastorica.jpg" class="history-image" alt="Quizienza - storia">
        
       <p>Il resto è storia...</p>
 
@@ -51,21 +51,53 @@
     </p>
   </main>
 
-  <!-- FOOTER come in index -->
-  <footer class="site-footer" style="margin-top: 30px; text-align: center; font-size: 0.9em; color: #666;">
+  <!-- FOOTER (uguale a index) -->
+  <footer class="site-footer site-footer-contained" style="background:#fff; border-top:1px solid #eee; padding:10px 12px; text-align:center; font-size:0.9em; color:#666;">
     <p>
-      Questo sito utilizza cookie tecnici per mantenere la sessione e garantire il
-      corretto funzionamento del sistema di quiz. Nessun dato personale viene
-      tracciato per fini pubblicitari. Continuando a navigare, accetti l'uso dei cookie.
-      Le informazioni e le risposte fornite su questo sito hanno esclusivamente
-      scopo di ripasso e supporto allo studio. Non costituiscono materiale ufficiale
-      né sostituiscono lo studio diretto sui testi e manuali di riferimento, che restano
-      lo strumento principale e indispensabile per una preparazione completa.
-      Gli autori e i gestori declinano ogni responsabilità per eventuali errori,
-      omissioni o inesattezze, così come per qualsiasi danno diretto o indiretto
-      derivante dall’utilizzo dei contenuti.
+      Le informazioni e le risposte fornite su questo sito hanno esclusivamente scopo di ripasso e supporto allo studio.
+      <button id="cookie-more-btn" class="linklike-btn" type="button">Scopri di più</button>
     </p>
-    <p>© 2025 Quizienza. Tutti i contenuti sono protetti da copyright.</p>
+    <div id="cookie-more" style="display:none; max-width: 900px; margin: 6px auto 0; line-height:1.6;">
+      <p>
+        Non costituiscono materiale ufficiale né sostituiscono lo studio diretto sui testi e manuali di riferimento, che restano lo strumento principale e
+        indispensabile per una preparazione completa. Gli autori e i gestori declinano ogni responsabilità per eventuali errori, omissioni o
+        inesattezze, così come per qualsiasi danno diretto o indiretto derivante dall'utilizzo dei contenuti.
+      </p>
+      <p style="margin-top:8px;">© 2025 Quizienza. Tutti i contenuti di questo sito sono protetti da copyright. È vietata la riproduzione, copia o distribuzione non autorizzata.</p>
+    </div>
   </footer>
+
+  <script>
+    // Gestione "Scopri di più" come in index: toggle + scroll
+    document.addEventListener('DOMContentLoaded', function(){
+      var btn = document.getElementById('cookie-more-btn');
+      var more = document.getElementById('cookie-more');
+      if (btn && more) {
+        btn.setAttribute('aria-expanded','false');
+        btn.addEventListener('click', function(){
+          var vis = more.style.display !== 'none';
+          if (vis) {
+            more.style.display = 'none';
+            btn.textContent = 'Scopri di più';
+            btn.setAttribute('aria-expanded','false');
+          } else {
+            more.style.display = 'block';
+            btn.textContent = 'Mostra meno';
+            btn.setAttribute('aria-expanded','true');
+            requestAnimationFrame(function(){
+              try {
+                var endY = more.getBoundingClientRect().bottom + window.scrollY;
+                var maxY = document.documentElement.scrollHeight - window.innerHeight;
+                var target = Math.min(endY, maxY);
+                window.scrollTo({ top: target, behavior: 'smooth' });
+              } catch(_) {
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+              }
+            });
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>

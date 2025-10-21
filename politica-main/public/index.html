@@ -442,8 +442,7 @@
                         <div class="tooltip-container" id="frequent-errors-tooltip">
                             <span class="tooltip-icon">?</span>
                             <div class="tooltip-text">
-                                <strong>Come funziona:</strong> Un errore diventa "frequente" dopo che lo commetti più
-                                di 2 volte. Questo pulsante ti permette di ripetere solo le domande che hai sbagliato
+                                <strong>Come funziona:</strong> Un errore diventa "frequente" quando lo sbagli 2 volte. Questo pulsante ti permette di ripetere solo le domande che hai sbagliato
                                 più spesso, per concentrarti sui tuoi punti deboli.
                             </div>
                         </div>
@@ -461,19 +460,30 @@
             <a href="chi-siamo.html" class="chi-siamo-btn">Chi Siamo</a>
         </div>
 
-        <!-- Footer visibile solo nella dashboard -->
-        <footer class="site-footer" style="margin-top: 30px; text-align: center; font-size: 0.9em; color: #666;">
-            <p>Questo sito utilizza cookie tecnici per mantenere la sessione e garantire il corretto funzionamento del
-                sistema di quiz. Nessun dato personale viene tracciato per fini pubblicitari. Continuando a navigare,
-                accetti l'uso dei cookie. Le informazioni e le risposte fornite su questo sito hanno esclusivamente
-                scopo di ripasso e supporto allo studio. Non costituiscono materiale ufficiale né sostituiscono lo
-                studio diretto sui testi e manuali di riferimento, che restano lo strumento principale e indispensabile
-                per una preparazione completa. Gli autori e i gestori declinano ogni responsabilità per eventuali
-                errori, omissioni o inesattezze, così come per qualsiasi danno diretto o indiretto derivante
-                dall'utilizzo dei contenuti. </p>
-            <p>© 2025 Quizienza. Tutti i contenuti di questo sito sono protetti da copyright. È vietata la riproduzione,
-                copia o distribuzione non autorizzata.</p>
+        <!-- Footer visibile solo nella dashboard (non fisso) -->
+        <footer class="site-footer" style="background:#fff; border-top:1px solid #eee; padding:10px 12px; text-align:center; font-size:0.9em; color:#666;">
+            <p>
+                Le informazioni e le risposte fornite su questo sito hanno esclusivamente scopo di ripasso e supporto allo studio.
+                <button id="cookie-more-btn" class="linklike-btn" type="button">Scopri di più</button>
+            </p>
+            <div id="cookie-more" style="display:none; max-width: 900px; margin: 6px auto 0; line-height:1.6;">
+                <p>
+                    Non costituiscono materiale ufficiale né sostituiscono lo studio diretto sui testi e manuali di riferimento, che restano lo strumento principale e
+                    indispensabile per una preparazione completa. Gli autori e i gestori declinano ogni responsabilità per eventuali errori, omissioni o
+                    inesattezze, così come per qualsiasi danno diretto o indiretto derivante dall'utilizzo dei contenuti.
+                </p>
+                <p style="margin-top:8px;">© 2025 Quizienza. Tutti i contenuti di questo sito sono protetti da copyright. È vietata la riproduzione, copia o distribuzione non autorizzata.</p>
+            </div>
         </footer>
+        <style>
+          /* Footer non fisso: nessun padding extra */
+          body { padding-bottom: 0; }
+          /* Con banner cookie aperto, aggiungi spazio sotto il footer per non coprire */
+          .cookie-banner-open .site-footer { margin-bottom: 140px; }
+          @media (max-width: 480px) { .cookie-banner-open .site-footer { margin-bottom: 180px; } }
+        </style>
+
+        
     </div>
 
     <!-- Quiz Screen -->
@@ -640,6 +650,26 @@
         <!-- Il contenuto verrà generato dinamicamente da JavaScript -->
     </div>
 
+    <!-- Cookie Consent Banner (global, visible anche nel login) -->
+    <div id="cookie-banner" class="cookie-banner" style="display:none;">
+        <div class="cookie-banner__content">
+            <div class="cookie-banner__text">
+                <strong>Usiamo cookie tecnici necessari</strong> per garantire il corretto funzionamento dell'app. Puoi accettare tutti i cookie opzionali o gestire le preferenze.
+            </div>
+            <button id="cookie-settings-toggle" class="cookie-link" type="button">Impostazioni</button>
+            <div id="cookie-settings" class="cookie-settings" style="display:none;">
+                <label class="cookie-switch"><input type="checkbox" checked disabled> <span>Necessari</span></label>
+                <label class="cookie-switch"><input id="cookie-analytics" type="checkbox"> <span>Analitici</span></label>
+                <label class="cookie-switch"><input id="cookie-marketing" type="checkbox"> <span>Marketing</span></label>
+            </div>
+            <div class="cookie-actions">
+                <button id="cookie-save" class="cookie-btn" type="button">Salva preferenze</button>
+                <button id="cookie-decline" class="cookie-btn ghost" type="button">Rifiuta</button>
+                <button id="cookie-accept-all" class="cookie-btn primary" type="button">Accetta tutto</button>
+            </div>
+        </div>
+    </div>
+
     <!-- RIMOSSO: <script src="domandepoleco.js"></script> -->
     <!-- Javascript per i file organizzati-->
     <script src="js/protect.js"></script>
@@ -650,6 +680,124 @@
     <script src="js/flashcard-system.js"></script>
     <script src="js/ui-manager.js"></script>
     <script src="js/main.js"></script>
+    <script>
+      (function(){
+        // Footer: scopri di più
+        document.addEventListener('DOMContentLoaded', function(){
+          var btn = document.getElementById('cookie-more-btn');
+          var more = document.getElementById('cookie-more');
+          if (btn && more) {
+            btn.setAttribute('aria-expanded','false');
+            btn.addEventListener('click', function(){
+              var vis = more.style.display !== 'none';
+              if (vis) {
+                more.style.display = 'none';
+                btn.textContent = 'Scopri di più';
+                btn.setAttribute('aria-expanded','false');
+              } else {
+                more.style.display = 'block';
+                btn.textContent = 'Mostra meno';
+                btn.setAttribute('aria-expanded','true');
+                // dopo l'apertura, scorri per mostrare la parte aggiunta
+                requestAnimationFrame(function(){
+                  try {
+                    var endY = more.getBoundingClientRect().bottom + window.scrollY;
+                    var maxY = document.documentElement.scrollHeight - window.innerHeight;
+                    var target = Math.min(endY, maxY);
+                    window.scrollTo({ top: target, behavior: 'smooth' });
+                  } catch(_) {
+                    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+                  }
+                });
+              }
+            });
+          }
+        });
+
+        // Cookie consent (banner)
+        var KEY='cookie_consent_v1';
+        function showBanner(){
+          var el=document.getElementById('cookie-banner');
+          if(el) el.style.display='block';
+          try{ document.body.classList.add('cookie-banner-open'); }catch(e){}
+          adjustFooterOffset();
+        }
+        function hideBanner(){
+          var el=document.getElementById('cookie-banner');
+          if(el) el.style.display='none';
+          try{ document.body.classList.remove('cookie-banner-open'); }catch(e){}
+          adjustFooterOffset();
+        }
+
+        // Cookie helpers
+        function setCookie(name, value, maxAgeSeconds){
+          var parts=[name+'='+value,'path=/'];
+          if(maxAgeSeconds) parts.push('max-age='+maxAgeSeconds);
+          parts.push('samesite=Lax');
+          document.cookie = parts.join('; ');
+        }
+        function getCookie(name){
+          var m=document.cookie ? document.cookie.split('; ') : [];
+          for(var i=0;i<m.length;i++){
+            var kv=m[i].split('=');
+            if(kv[0]===name) return kv.slice(1).join('=');
+          }
+          return null;
+        }
+
+        function saveConsent(c){
+          try{ localStorage.setItem(KEY, JSON.stringify(c)); }catch(e){}
+          try{ setCookie(KEY, encodeURIComponent(JSON.stringify(c)), 60*60*24*365); }catch(e){}
+        }
+        function getConsent(){
+          try {
+            var cookieVal = getCookie(KEY);
+            if(cookieVal){ return JSON.parse(decodeURIComponent(cookieVal)); }
+          } catch(e){}
+          // Non usare localStorage come fallback per rispettare il requisito:
+          // se l'utente rimuove i cookie, il banner deve riapparire.
+          return null;
+        }
+
+        function adjustFooterOffset(){
+          var footer=document.querySelector('.site-footer');
+          var banner=document.getElementById('cookie-banner');
+          if(!footer) return;
+          var visible = banner && banner.style.display !== 'none';
+          if(visible){ document.body.classList.add('cookie-banner-open'); }
+          else { document.body.classList.remove('cookie-banner-open'); }
+        }
+        window.addEventListener('resize', adjustFooterOffset);
+
+        document.addEventListener('DOMContentLoaded', function(){
+          var settings=document.getElementById('cookie-settings');
+          var togg=document.getElementById('cookie-settings-toggle');
+          if(togg) togg.addEventListener('click', function(){ if(settings) settings.style.display = settings.style.display==='none'?'block':'none'; });
+          var acc=document.getElementById('cookie-accept-all');
+          var dec=document.getElementById('cookie-decline');
+          var sav=document.getElementById('cookie-save');
+          var a=document.getElementById('cookie-analytics');
+          var m=document.getElementById('cookie-marketing');
+          function applyFromConsent(cs){ if(a) a.checked=!!cs.analytics; if(m) m.checked=!!cs.marketing; }
+          function acceptAll(){ var cs={necessary:true,analytics:true,marketing:true,ts:Date.now()}; saveConsent(cs); hideBanner(); dispatchConsent(cs); }
+          function decline(){ var cs={necessary:true,analytics:false,marketing:false,ts:Date.now()}; saveConsent(cs); hideBanner(); dispatchConsent(cs); }
+          function save(){ var cs={necessary:true,analytics:!!(a&&a.checked),marketing:!!(m&&m.checked),ts:Date.now()}; saveConsent(cs); hideBanner(); dispatchConsent(cs); }
+          if(acc) acc.addEventListener('click', acceptAll);
+          if(dec) dec.addEventListener('click', decline);
+          if(sav) sav.addEventListener('click', save);
+
+          // Mostra il banner solo se non esiste ancora un consenso
+          var existing = getConsent();
+          if(!existing){ showBanner(); }
+          else { hideBanner(); }
+
+          // API per riaprire le impostazioni
+          window.openCookieSettings=function(){ var cs=getConsent(); if(cs) applyFromConsent(cs); showBanner(); };
+          function dispatchConsent(cs){ try{ window.dispatchEvent(new CustomEvent('cookie-consent-updated',{detail:cs})); }catch(e){} }
+          adjustFooterOffset();
+        });
+      })();
+    </script>
 </body>
 
 </html>

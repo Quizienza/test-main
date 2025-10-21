@@ -767,7 +767,8 @@ function selectAnswer(e) {
             errorFrequencyBySubject[currentSubject][currentQuestion.question] =
                 (errorFrequencyBySubject[currentSubject][currentQuestion.question] || 0) + 1;
 
-            if (errorFrequencyBySubject[currentSubject][currentQuestion.question] > 2 &&
+            // Modalità fissa: un errore diventa "frequente" al secondo errore (>= 2)
+            if (errorFrequencyBySubject[currentSubject][currentQuestion.question] >= 2 &&
                 !frequentErrorsBySubject[currentSubject].some(q => q.question === currentQuestion.question)) {
                 frequentErrorsBySubject[currentSubject].push(currentQuestion);
             }

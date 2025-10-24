@@ -51,6 +51,45 @@ const STORAGE_KEYS = {
     STATS: 'quizienza_flashcards_stats'
 };
 
+// === Scheduling in-session reinserts (short reviews) ===
+// Mantiene carte programmate a breve che devono rientrare in cima al mazzo
+let __scheduledReinserts = []; // [{id, due, mode}]
+let __sessionReviewedIds = new Set();
+
+function scheduleReinsert(card, dueMsFromNow, mode){
+    try {
+        if (!card || !card.id || !Number.isFinite(dueMsFromNow)) return;
+        const due = Date.now() + dueMsFromNow;
+        // rimuovi eventuali duplicati esistenti per la stessa carta
+        __scheduledReinserts = (__scheduledReinserts || []).filter(x => x.id !== card.id);
+        __scheduledReinserts.push({ id: card.id, due, mode: mode || currentStudyMode });
+    } catch(_){}
+}
+
+function injectDueScheduledCardsAsNext(){
+    try {
+        if (!Array.isArray(__scheduledReinserts) || !__scheduledReinserts.length) return;
+        const now = Date.now();
+        // prendi solo quelle scadute per la modalità corrente
+        const dueList = __scheduledReinserts
+            .filter(it => it.mode === currentStudyMode && it.due <= now);
+        if (!dueList.length) return;
+        // ordina per scadenza
+        dueList.sort((a,b)=>a.due-b.due);
+        dueList.forEach(item => {
+            const idx = sessionCards.findIndex(c => c && c.id === item.id);
+            if (idx === -1) return; // non in sessione
+            // sposta la carta nella posizione corrente (prossima da mostrare)
+            const [card] = sessionCards.splice(idx, 1);
+            // clamp index
+            const insertAt = Math.max(0, Math.min(currentCardIndex, sessionCards.length));
+            sessionCards.splice(insertAt, 0, card);
+            // rimuovi dall'elenco scheduled
+            __scheduledReinserts = __scheduledReinserts.filter(x => x.id !== item.id);
+        });
+    } catch(e){ console.warn('[flashcards] injectDueScheduledCardsAsNext failed', e); }
+}
+
 /** Persistenza "tasti rapidi" a livello utente+sezione **/
 const KEYBOARD_HINT_BASEKEY = 'quizienza_keyboard_hint_shown';
 function getKeyboardHintKey() {
@@ -410,6 +449,7 @@ function showAddFlashcardModal() {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    try { document.body.classList.add('flashcards-open'); } catch(_){ }
 
     // Focus sul primo campo
     setTimeout(() => {
@@ -422,6 +462,7 @@ function closeAddFlashcardModal() {
     if (modal) {
         modal.remove();
     }
+    try { document.body.classList.remove('flashcards-open'); } catch(_){ }
 }
 
 function addNewFlashcard() {
@@ -461,6 +502,14 @@ function addNewFlashcard() {
     updateModeCounters();
     updateGlobalStats();
 
+    // Se il pannello di gestione è aperto, aggiorna immediatamente l'elenco
+    try {
+        const listContainer = document.getElementById('user-flashcards-list');
+        if (listContainer) {
+            listContainer.innerHTML = generateUserFlashcardsList();
+        }
+    } catch(_){}
+
     console.log('🆕 Nuova flashcard utente creata - Posizione: Le tue Flashcard');
 }
 
@@ -496,6 +545,7 @@ function showManageFlashcardsModal() {
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    try { document.body.classList.add('flashcards-open'); } catch(_){ }
 }
 
 function closeManageFlashcardsModal() {
@@ -503,6 +553,7 @@ function closeManageFlashcardsModal() {
     if (modal) {
         modal.remove();
     }
+    try { document.body.classList.remove('flashcards-open'); } catch(_){ }
 }
 
 // Accesso rapido alla gestione/creazione delle carte utente
@@ -623,6 +674,7 @@ function editUserFlashcard(cardId) {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    try { document.body.classList.add('flashcards-open'); } catch(_){ }
 }
 
 function closeEditFlashcardModal() {
@@ -630,6 +682,7 @@ function closeEditFlashcardModal() {
     if (modal) {
         modal.remove();
     }
+    try { document.body.classList.remove('flashcards-open'); } catch(_){ }
 }
 
 function saveEditedFlashcard(cardId) {
@@ -797,22 +850,20 @@ function updateCardWithInterval(card, intervalMs) {
                     card.difficultAddedAt = null;
                     card.dueDate = new Date(now.getTime() + intervalMs);
                 }
+                // pianifica rientro in sessione quando scade
+                scheduleReinsert(card, intervalMs, 'user_new');
             } else {
-                // intervallo lungo → resta in "Le tue Flashcard"
+                // intervallo lungo → programma il rientro (va in "Le tue carte in scadenza")
                 card.fromNewCardsCount = 0;
                 card.isDifficult = false;
                 card.difficultAddedAt = null;
-                card.dueDate = null;
+                card.dueDate = new Date(now.getTime() + intervalMs);
+                scheduleReinsert(card, intervalMs, 'user_new');
             }
         } else if (currentStudyMode === 'user_due') {
-            if (isShortInterval) {
-                card.dueDate = new Date(now.getTime() + intervalMs);       // riprogramma
-            } else {
-                // torna in "Le tue Flashcard" e mettila davanti
-                card.movedFromUserDueAt = now.getTime();
-                card.lastDueDate = card.dueDate ? new Date(card.dueDate).getTime() : null;
-                card.dueDate = null;
-            }
+            // Sempre riprogramma, anche per intervalli lunghi
+            card.dueDate = new Date(now.getTime() + intervalMs);
+            scheduleReinsert(card, intervalMs, 'user_due');
             card.isDifficult = false;
             card.difficultAddedAt = null;
         } else if (currentStudyMode === 'difficult') {
@@ -822,6 +873,7 @@ function updateCardWithInterval(card, intervalMs) {
             card.difficultAddedAt = null;
             card.movedFromDifficultAt = now.getTime();
             card.dueDate = new Date(now.getTime() + intervalMs); // non appare in nessuna modalità finché non scade
+            if (isShortInterval) scheduleReinsert(card, intervalMs, 'difficult');
         } else {
             card.isDifficult = false;
             card.difficultAddedAt = null;
@@ -846,6 +898,8 @@ function updateCardWithInterval(card, intervalMs) {
                 card.difficultAddedAt = null;
                 card.dueDate = new Date(now.getTime() + intervalMs);        // va in "Carte in Scadenza"
             }
+            // pianifica rientro in sessione quando scade
+            scheduleReinsert(card, intervalMs, 'new');
         } else {
             card.fromNewCardsCount = 0;
             card.isDifficult = false;
@@ -853,8 +907,9 @@ function updateCardWithInterval(card, intervalMs) {
             card.dueDate = new Date(now.getTime() + intervalMs);
         }
     } else if (currentStudyMode === 'due') {
-        // nessun conteggio in "Carte in Scadenza"
+        // nessun conteggio in "Carte in Scadenza"; riprogramma sempre
         card.dueDate = new Date(now.getTime() + intervalMs);
+        scheduleReinsert(card, intervalMs, 'due');
     } else if (currentStudyMode === 'difficult') {
         // Da "Carte Difficili": rispetta l'intervallo scelto e sospendi la carta
         card.isDifficult = false;
@@ -862,9 +917,11 @@ function updateCardWithInterval(card, intervalMs) {
         card.fromNewCardsCount = 0;
         card.movedFromDifficultAt = now.getTime();
         card.dueDate = new Date(now.getTime() + intervalMs); // rientra dopo la scadenza
+        if (isShortInterval) scheduleReinsert(card, intervalMs, 'difficult');
     } else {
-        // 'all'/'default'
+        // 'all'/'default' riprogramma sempre
         card.dueDate = new Date(now.getTime() + intervalMs);
+        scheduleReinsert(card, intervalMs, currentStudyMode);
     }
 
     if (intervalMs >= INTERVALS.ONE_DAY && !card.isDifficult) {
@@ -1011,6 +1068,7 @@ function rateCardWithInterval(intervalMs) {
     if (currentStudyMode === 'due' || currentStudyMode === 'user_due') {
         currentCard.lastReviewed = new Date();
         currentCard.reviews = (currentCard.reviews || 0) + 1;
+        try { __sessionReviewedIds.add(currentCard.id); } catch(_){ }
 
         if (currentCard.isUserCard) {
             saveUserFlashcards();
@@ -1038,7 +1096,7 @@ function rateCardWithInterval(intervalMs) {
         currentCardIndex++;
 
         if (currentCardIndex < sessionCards.length) {
-
+            injectDueScheduledCardsAsNext();
             showCurrentCard();
         } else {
             endSession();
@@ -1049,6 +1107,7 @@ function rateCardWithInterval(intervalMs) {
     // Comportamento normale per le altre modalità
     if (currentStudyMode !== 'all' && currentStudyMode !== 'user' && currentStudyMode !== 'default') {
         updateCardWithInterval(currentCard, intervalMs);
+        try { __sessionReviewedIds.add(currentCard.id); } catch(_){ }
 
         // Salva nel posto giusto in base al tipo di carta
         if (currentCard.isUserCard) {
@@ -1072,6 +1131,7 @@ function rateCardWithInterval(intervalMs) {
         } catch (e) { console.warn('streak record failed:', e); }
     } else {
         console.log(`📚 Modalità "${currentStudyMode}": carta NON modificata`);
+        try { __sessionReviewedIds.add(currentCard.id); } catch(_){ }
         // Hook slancio anche in 'all', 'default' e varianti user: ogni carta vale per la soglia giornaliera; se raggiungi la soglia, apri la tendina
         try {
             if (typeof recordStudySession === 'function') {
@@ -1091,6 +1151,9 @@ function rateCardWithInterval(intervalMs) {
     currentCardIndex++;
 
     if (currentCardIndex < sessionCards.length) {
+        // Prima di mostrare la prossima carta, se sono scadute carte pianificate
+        // per rientrare nella modalità corrente, reinseriscile in cima
+        injectDueScheduledCardsAsNext();
         showCurrentCard();
     } else {
         endSession();
@@ -1684,6 +1747,7 @@ function startStudySession(mode) {
     currentCardIndex = 0;
     isAnswerShown = false;
     sessionCorrectAnswers = 0;
+    __sessionReviewedIds = new Set();
     sessionStartTime = new Date();
 
     saveSessionState();
@@ -1774,14 +1838,16 @@ function updateProgressBar() {
     }
 
     if (progressPercent) {
+        const reviewed = (__sessionReviewedIds && __sessionReviewedIds.size) || 0;
         const percent = sessionCards.length > 0
-            ? Math.round((currentCardIndex / sessionCards.length) * 100)
+            ? Math.round((reviewed / sessionCards.length) * 100)
             : 0;
         progressPercent.textContent = `${percent}%`;
     }
 
     if (deckProgress) {
-        deckProgress.textContent = `${currentCardIndex}/${sessionCards.length}`;
+        const reviewed = (__sessionReviewedIds && __sessionReviewedIds.size) || 0;
+        deckProgress.textContent = `${reviewed}/${sessionCards.length}`;
     }
 }
 
@@ -1790,7 +1856,8 @@ function updateSessionStats() {
     const sessionAccuracy = document.getElementById('session-accuracy');
 
     if (cardsReviewed) {
-        cardsReviewed.textContent = currentCardIndex;
+        const reviewed = (__sessionReviewedIds && __sessionReviewedIds.size) || 0;
+        cardsReviewed.textContent = reviewed;
     }
 
     if (sessionAccuracy && currentCardIndex > 0) {
@@ -1981,11 +2048,13 @@ function showModesHelp() {
 </div>`;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    try { document.body.classList.add('flashcards-open'); } catch(_){ }
 }
 
 function closeModesHelp() {
     const modal = document.getElementById('modes-help-modal');
     if (modal) modal.remove();
+    try { document.body.classList.remove('flashcards-open'); } catch(_){ }
     try { if (typeof maybeShowDailyStreakPopup === 'function') maybeShowDailyStreakPopup('auto'); } catch (_) { }
 }
 
@@ -3731,12 +3800,6 @@ function showStats() {
                         <div class="stats-details-list">
                             <div class="stats-detail-item">
                                 <span class="stats-detail-label">
-                                    <i class="fas fa-plus-circle"></i> Carte nuove
-                                </span>
-                                <span class="stats-detail-value">${stats.newCards}</span>
-                            </div>
-                            <div class="stats-detail-item">
-                                <span class="stats-detail-label">
                                     <i class="fas fa-clock"></i> Carte in scadenza
                                 </span>
                                 <span class="stats-detail-value">${stats.dueCards}</span>
@@ -3751,7 +3814,7 @@ function showStats() {
                                 <span class="stats-detail-label">
                                     <i class="fas fa-user-edit"></i> Carte personalizzate
                                 </span>
-                                <span class="stats-detail-value">${stats.userCardsCount}</span>
+                                <span class="stats-detail-value">${userCustomFlashcards.length}</span>
                             </div>
                             <div class="stats-detail-item">
                                 <span class="stats-detail-label">
@@ -3785,6 +3848,7 @@ function showStats() {
     if (existingStats) existingStats.remove();
 
     document.body.insertAdjacentHTML('beforeend', statsHTML);
+    try { document.body.classList.add('flashcards-open'); } catch(_){ }
 
     setTimeout(() => {
         const overlay = document.querySelector('.stats-modal-overlay');
@@ -3806,6 +3870,7 @@ function closeStats() {
             if (statsOverlay.parentNode) {
                 statsOverlay.parentNode.removeChild(statsOverlay);
             }
+            try { document.body.classList.remove('flashcards-open'); } catch(_){ }
         }, 300);
     }
 }
